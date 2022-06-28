@@ -1,6 +1,8 @@
 import requests
 import datetime
 import json
+import pickle
+import os.path
 from pprint import pprint
 
 
@@ -34,16 +36,32 @@ def getPriceData(symbol):
 
 
 def getOptionChain(symbol, contract):
-    response = requests.get(
-        url=f"https://api.tdameritrade.com/v1/marketdata/chains",
-        params={
-            "apikey": ameritradeAPIKey,
-            "symbol": symbol,
-            "contractType": contract,
-            "strikeCount": 25,
-            "includeQuotes": "FALSE",
-        }
-    )
+    now = datetime.datetime.now()
+    startOfHour = datetime.datetime(year=now.year, month=now.month, day=now.day, hour=now.hour, minute=0, second=0, microsecond=0)
+    cacheFileName = f"cache/options-chain-{symbol}-{contract}-{startOfHour.isoformat()}.bin"
 
-    data = json.loads(response.content)
-    return data
+    # TODO: this should use mongo with a TTL index instead of a local file cache
+    if os.path.exists(cacheFileName):
+        f = open(cacheFileName, 'rb')
+        data = pickle.load(f)
+        f.close()
+        return data
+    else:
+        response = requests.get(
+            url=f"https://api.tdameritrade.com/v1/marketdata/chains",
+            params={
+                "apikey": ameritradeAPIKey,
+                "symbol": symbol,
+                "contractType": contract,
+                "strikeCount": 25,
+                "includeQuotes": "FALSE",
+            }
+        )
+
+        data = json.loads(response.content)
+
+        f = open(cacheFileName, 'wb')
+        pickle.dump(data, f)
+        f.close()
+
+        return data

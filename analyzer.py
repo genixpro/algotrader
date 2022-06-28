@@ -73,7 +73,7 @@ def compareOptionChainContracts(priceSimulation, putProfitsByStrike, callProfits
         callReturn = (callGain / callClearingPrice) * proportionToInvest
         callROI = numpy.power(1 + callReturn, 365 / differenceDays) - 1
 
-        comparisons[strikePrice] = {
+        comparisons[float(strikePrice)] = {
             "putExpectedProfit": putExpectedProfit,
             "putClearingPrice": putClearingPrice,
             "callExpectedProfit": callExpectedProfit,
@@ -90,7 +90,7 @@ def compareOptionChainContracts(priceSimulation, putProfitsByStrike, callProfits
             "putLossRate": lossRate,
         }
 
-        pprint(comparisons[strikePrice])
+        pprint(comparisons[float(strikePrice)])
 
     return comparisons
 
