@@ -38,9 +38,12 @@ def getPriceData(symbol):
 def getOptionChain(symbol, contract):
     now = datetime.datetime.now()
     startOfHour = datetime.datetime(year=now.year, month=now.month, day=now.day, hour=now.hour, minute=0, second=0, microsecond=0)
-    cacheFileName = f"cache/options-chain-{symbol}-{contract}-{startOfHour.isoformat()}.bin"
+
+    if not os.path.exists("cache"):
+        os.mkdir("cache")
 
     # TODO: this should use mongo with a TTL index instead of a local file cache
+    cacheFileName = f"cache/options-chain-{symbol}-{contract}-{startOfHour.isoformat()}.bin"
     if os.path.exists(cacheFileName):
         f = open(cacheFileName, 'rb')
         data = pickle.load(f)
