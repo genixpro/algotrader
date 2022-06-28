@@ -1,6 +1,6 @@
 import numpy
 import random
-import historicaldata
+import historical_data
 import matplotlib.pyplot as plt
 from global_services import globalExecutor
 
@@ -41,7 +41,7 @@ class SinglePriceSimulation:
         random.shuffle(sampledGapPreviousValues)
 
         lastDatapoint = None
-        nextDatapoint = historicaldata.PriceDatapoint()
+        nextDatapoint = historical_data.PriceDatapoint()
         for n in range(numDays):
             if n == 0:
                 nextDatapoint.open = currentOpenPrice

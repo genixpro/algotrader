@@ -4,7 +4,7 @@ from matplotlib import pyplot as plt
 import numpy
 import numpy.random
 import ameritrade
-import historicaldata
+import historical_data
 import simulation
 import constants
 
@@ -106,7 +106,7 @@ def analyzeSymbolOptions():
     historicalsStartDate = datetime.datetime.now() - datetime.timedelta(days=constants.priceSimulationDaysOfHistoricalDataToUse)
     historicalsEndDate = datetime.datetime.now() + datetime.timedelta(days=1)
 
-    historicals = historicaldata.HistoricalPrices()
+    historicals = historical_data.HistoricalPrices()
 
     datapoints = historicals.getProcessedTimeSeriesBetweenDates(constants.symbolToAnalyze, historicalsStartDate, historicalsEndDate)
 
