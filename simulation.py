@@ -136,7 +136,7 @@ class MonteCarloInvestmentSimulation:
 
         returns = list(sorted(returns))
 
-        outlierCutoff = int(len(returns) * 0.0001)
+        outlierCutoff = int(len(returns) * 0.01)
         averageReturn = numpy.mean(returns[outlierCutoff:-outlierCutoff])
         # averageReturn = numpy.mean(returns)
 
@@ -149,7 +149,14 @@ class MonteCarloInvestmentSimulation:
         bestProportionToInvest = None
         bestLossRate = None
         futures = []
-        for proportionToInvest in numpy.arange(0.05, 1.01, 0.05):
+
+        proportionsToTest = []
+        proportionsToTest.extend(numpy.arange(0.002, 0.01, 0.002))
+        proportionsToTest.extend(numpy.arange(0.01, 0.05, 0.01))
+        proportionsToTest.extend(numpy.arange(0.05, 0.20, 0.025))
+        proportionsToTest.extend(numpy.arange(0.20, 1.01, 0.05))
+
+        for proportionToInvest in proportionsToTest:
             future = globalExecutor.submit(self.computeAverageReturn, strikePrice, contractCost, proportionToInvest)
             futures.append((proportionToInvest, future))
 
@@ -163,7 +170,7 @@ class MonteCarloInvestmentSimulation:
             allProportions.append(proportionToInvest)
             allLossRates.append(lossRate)
 
-            print(f"{float(strikePrice):.2f}", f"{proportionToInvest:.2f}", f"{averageReturn:.2f}", f"{lossRate:.2f}")
+            print(f"{float(strikePrice):.3f}", f"{proportionToInvest:.3f}", f"{averageReturn:.3f}", f"{lossRate:.3f}")
             if bestAverageReturn is None or averageReturn > bestAverageReturn:
                 bestAverageReturn = averageReturn
                 bestProportionToInvest = proportionToInvest
@@ -177,10 +184,10 @@ class MonteCarloInvestmentSimulation:
 
         xp = numpy.linspace(0, 1, 1000)
 
-        plt.scatter(allProportions, allReturns, 25, 'blue')
-        plt.scatter(allProportions, numpy.array(allLossRates) * 10, 25, 'green')
-        plt.plot(xp, polyReturnLine(xp), 25, 'red')
-        plt.plot(xp, polyLossRateLine(xp) * 10, 25, 'yellow')
+        # plt.scatter(allProportions, allReturns, 25, 'blue')
+        # plt.scatter(allProportions, numpy.array(allLossRates) * 10, 25, 'green')
+        # plt.plot(xp, polyReturnLine(xp), 25, 'red')
+        # plt.plot(xp, polyLossRateLine(xp) * 10, 25, 'yellow')
         # plt.show()
 
         returnFitOptimalReturnRate = None
@@ -197,6 +204,6 @@ class MonteCarloInvestmentSimulation:
                 returnFitOptimalLossRate = lossRate
 
         print(
-            f"Best amount to invest, {bestProportionToInvest:.2f}: {bestAverageReturn:.2f}, {bestLossRate:.2f}, {returnFitOptimalProportionToInvest:.2f}, {returnFitOptimalLossRate:.2f}")
+            f"Best amount to invest, {bestProportionToInvest:.3f}: {bestAverageReturn:.3f}, {bestLossRate:.3f}, {returnFitOptimalProportionToInvest:.3f}, {returnFitOptimalLossRate:.3f}")
 
         return max(0.0, min(1.0, returnFitOptimalProportionToInvest)), max(0.0, min(1.0, returnFitOptimalLossRate))
