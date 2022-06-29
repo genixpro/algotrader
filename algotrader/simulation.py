@@ -4,6 +4,7 @@ import os.path
 from algotrader import historical_data
 import matplotlib.pyplot as plt
 from algotrader.global_services import globalExecutor
+from algotrader import constants
 
 class PriceSimulationParameters:
     def __init__(self, datapoints):
@@ -145,10 +146,11 @@ class MonteCarloInvestmentSimulation:
         futures = []
 
         proportionsToTest = []
-        proportionsToTest.extend(numpy.arange(0.002, 0.01, 0.002))
-        proportionsToTest.extend(numpy.arange(0.01, 0.05, 0.01))
-        proportionsToTest.extend(numpy.arange(0.05, 0.20, 0.025))
-        proportionsToTest.extend(numpy.arange(0.20, 1.01, 0.05))
+        # proportionsToTest.extend(numpy.arange(0.002, 0.01, 0.002))
+        # proportionsToTest.extend(numpy.arange(0.01, 0.05, 0.01))
+        # proportionsToTest.extend(numpy.arange(0.05, 0.20, 0.025))
+        # proportionsToTest.extend(numpy.arange(0.20, 1.01, 0.05))
+        proportionsToTest.extend(numpy.arange(0.05, 1.01, 0.05))
 
         for proportionToInvest in proportionsToTest:
             future = globalExecutor.submit(self.computeAverageReturn, strikePrice, contractCost, contract, proportionToInvest)
@@ -185,31 +187,32 @@ class MonteCarloInvestmentSimulation:
 
         xp = numpy.linspace(0, 1, 1000)
 
-        fig, ax = plt.subplots(figsize=(12, 6))
+        if constants.generateCharts:
+            fig, ax = plt.subplots(figsize=(12, 6))
 
-        ax.scatter(allProportions, numpy.array(allAverageReturns), 25, 'blue', label='Average Return (assuming 100% invested)')
-        ax.scatter(allProportions, numpy.array(allLossRates), 25, 'green', label='Loss Rate')
-        ax.scatter(allProportions, numpy.array(allAdjustedReturns), 25, 'red', label='Adjusted Return (assuming 1 - lossRate invested)')
-        ax.scatter(allProportions, numpy.array(allAdjustedProportions), 25, 'grey', label='Loss Adjusted Proportions To Invest')
-        ax.plot(xp, polyAverageReturnLine(xp), 25, 'blue', label='Average Return Trend')
-        ax.plot(xp, polyLossRateLine(xp), 25, 'green', label='Loss Rate Trend')
-        ax.plot(xp, polyAdjustedReturnLine(xp), 25, 'red', label='Adjusted Return Trend')
-        ax.plot(xp, polyAdjustedProportionLine(xp), 25, 'grey', label='Loss Adjusted Proportion To Invest Trend')
-        ax.set_xlim([0, 1])
+            ax.scatter(allProportions, numpy.array(allAverageReturns), 25, 'blue', label='Average Return (assuming 100% invested)')
+            ax.scatter(allProportions, numpy.array(allLossRates), 25, 'green', label='Loss Rate')
+            ax.scatter(allProportions, numpy.array(allAdjustedReturns), 25, 'red', label='Adjusted Return (assuming 1 - lossRate invested)')
+            ax.scatter(allProportions, numpy.array(allAdjustedProportions), 25, 'grey', label='Loss Adjusted Proportions To Invest')
+            ax.plot(xp, polyAverageReturnLine(xp), 25, 'blue', label='Average Return Trend')
+            ax.plot(xp, polyLossRateLine(xp), 25, 'green', label='Loss Rate Trend')
+            ax.plot(xp, polyAdjustedReturnLine(xp), 25, 'red', label='Adjusted Return Trend')
+            ax.plot(xp, polyAdjustedProportionLine(xp), 25, 'grey', label='Loss Adjusted Proportion To Invest Trend')
+            ax.set_xlim([0, 1])
 
-        ylimit = 1.0
-        ylimit = max(ylimit, numpy.max(allAdjustedReturns) * 1.1)
-        ylimit = max(ylimit, numpy.max(allAverageReturns) * 1.1)
+            ylimit = 1.0
+            ylimit = max(ylimit, numpy.max(allAdjustedReturns) * 1.1)
+            ylimit = max(ylimit, numpy.max(allAverageReturns) * 1.1)
 
-        ax.set_ylim([-0.1, ylimit])
-        ax.set_title(f"Returns v.s. proportion of cash invested {symbol} at {strikePrice}")
-        ax.axhline(0, color='black')
-        ax.legend()
+            ax.set_ylim([-0.1, ylimit])
+            ax.set_title(f"Returns v.s. proportion of cash invested {symbol} at {strikePrice}")
+            ax.axhline(0, color='black')
+            ax.legend()
 
-        if not os.path.exists("images"):
-            os.mkdir("images")
-        plt.savefig(f"images/{symbol}-{contract}-{expiration}-{strikePrice}-optimal-investment-proportion.png")
-        plt.close(fig)
+            if not os.path.exists("images"):
+                os.mkdir("images")
+            plt.savefig(f"images/{symbol}-{contract}-{expiration}-{strikePrice}-optimal-investment-proportion.png")
+            plt.close(fig)
 
         returnFitOptimalAdjustedReturnRate = None
         returnFitOptimalProportionToInvest = None

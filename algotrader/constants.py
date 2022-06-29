@@ -14,6 +14,7 @@ optionClearingPriceSpreadMidpoint = 0.7
 optionMaxExpirationTimeDays = 25
 
 verboseOutput = False
+generateCharts = False
 
 symbolsToTrade = [
     "MGC",

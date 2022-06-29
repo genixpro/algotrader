@@ -8,6 +8,8 @@ from algotrader import ameritrade
 from algotrader import historical_data
 from algotrader import simulation
 from algotrader import constants
+import concurrent.futures
+import time
 
 def showEndingPriceChart(endingPrices):
     plt.hist(endingPrices, bins=25)
@@ -210,27 +212,38 @@ def analyzeSymbolOptions(symbol, contract, priceIncrement):
     # plt.show()
 
 def analyzeAllOptions():
-    allComparisons = []
+    topExecutor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
 
+    allComparisonFutures = []
     for symbol in constants.symbolsToTrade:
-        symbolComparisons = []
-
-        print(f"Analyzing symbol {symbol}")
-
         # Analyze the PUTS
-        symbolComparisons.extend(analyzeSymbolOptions(
+        putFuture = topExecutor.submit(analyzeSymbolOptions,
             symbol=symbol,
             contract="PUT",
             priceIncrement=constants.optionPriceIncrement,
-        ))
+        )
+        time.sleep(0.1)
 
         # Analyze the CALLS
-        symbolComparisons.extend(analyzeSymbolOptions(
+        callFuture = topExecutor.submit(analyzeSymbolOptions,
             symbol=symbol,
             contract="CALL",
             priceIncrement=constants.optionPriceIncrement,
-        ))
+        )
+        time.sleep(0.1)
 
+        allComparisonFutures.append((symbol, putFuture, callFuture))
+
+    allComparisons = []
+    for symbol, putFuture, callFuture in allComparisonFutures:
+        print(f"Fetching results for symbol {symbol}", flush=True)
+
+        putResult = putFuture.result()
+        callResult = callFuture.result()
+
+        symbolComparisons = []
+        symbolComparisons.extend(putResult)
+        symbolComparisons.extend(callResult)
         symbolComparisons = list(sorted(symbolComparisons, key=lambda comparison: comparison['annualizedReturn'], reverse=True))
 
         # Output the top ten options by return
