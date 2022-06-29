@@ -94,8 +94,9 @@ def compareOptionChainContracts(priceSimulation, profitsByStrike, optionChain, e
             "nonAdjustedOptimalInvestmentProportion": round(nonAdjustedOptimalInvestmentProportion, 3)
         }
 
-        print(f"{contract} with strike price {strikePrice}")
-        print(pformat({strikePrice: comparisons[float(strikePrice)]}))
+        if constants.verboseOutput:
+            print(f"{contract} with strike price {strikePrice}")
+            print(pformat({strikePrice: comparisons[float(strikePrice)]}))
 
     return comparisons
 
@@ -104,8 +105,9 @@ def runPriceSimulation(symbol, historicalsEndDate, predictionDays, datapoints=No
         historicals = historical_data.HistoricalPrices()
         datapoints = historicals.getProcessedTimeSeries(symbol, historicalsEndDate, constants.priceSimulationTradingDaysOfHistoricalDataToUse + 1)
 
-    print(f"Latest datapoint for symbol {symbol}")
-    pprint(datapoints[-1].__dict__)
+    if constants.verboseOutput:
+        print(f"Latest datapoint for symbol {symbol}")
+        pprint(datapoints[-1].__dict__)
     currentOpenPrice = datapoints[-1].open
     datapoints = datapoints[:-1]
 
@@ -145,45 +147,52 @@ def computeTradingDaysRemainingForExpiration(expiration):
     return tradingDays
 
 def analyzeSymbolOptions(symbol, contract, priceIncrement):
-    print(f"{symbol} {contract} Fetching current options quotes")
+    if constants.verboseOutput:
+        print(f"{symbol} {contract} Fetching current options quotes")
     putOptionChain = ameritrade.getOptionChain(symbol, contract)
 
-    print(f"{symbol} {contract} Available option expiration dates")
     expirationDates = list(putOptionChain[getOptionChainDetailsFieldForContractType(contract)].keys())
-    pprint(expirationDates)
+    if constants.verboseOutput:
+        print(f"{symbol} {contract} Available option expiration dates")
+        pprint(expirationDates)
 
     allComparisons = []
 
     for expiration in expirationDates:
         if (getDatetimeObjectForOptionExpiration(expiration) - datetime.datetime.now()).days > constants.optionMaxExpirationTimeDays:
-            print(f"Skipping analysis for {symbol} {contract} {expiration} because its too far in the future")
+            if constants.verboseOutput:
+                print(f"Skipping analysis for {symbol} {contract} {expiration} because its too far in the future")
             continue
 
         tradingDaysRemaining = computeTradingDaysRemainingForExpiration(expiration)
 
-        print(f"{symbol} {contract} {expiration} Running primary price simulation for {tradingDaysRemaining} trading days")
+        if constants.verboseOutput:
+            print(f"{symbol} {contract} {expiration} Running primary price simulation for {tradingDaysRemaining} trading days")
         historicalsEndDate = datetime.datetime.now() + datetime.timedelta(days=1)
         (priceSimulation, currentOpenPrice) = runPriceSimulation(
             symbol=symbol,
             historicalsEndDate=historicalsEndDate,
             predictionDays=tradingDaysRemaining)
 
-        print(f"{symbol} {contract} {expiration} Computing expected profits for all the different available options")
+        if constants.verboseOutput:
+            print(f"{symbol} {contract} {expiration} Computing expected profits for all the different available options")
         profitsByStrike = computeExpectedProfitsForFullOptionsChain(priceSimulation, currentOpenPrice, priceIncrement, contract)
 
-        print(f"{symbol} {contract} {expiration} Here are the expected profits at different strikes for the options:")
-        pprint(profitsByStrike)
+        if constants.verboseOutput:
+            print(f"{symbol} {contract} {expiration} Here are the expected profits at different strikes for the options:")
+            pprint(profitsByStrike)
 
         comparisons = compareOptionChainContracts(priceSimulation, profitsByStrike, putOptionChain, expiration, contract, symbol)
         # print("Here are the comparison details for different option contracts")
         # pprint(comparisons)
 
-        print(f"{symbol} {contract} {expiration} Here are the returns by strike")
-        allReturns = {
-            float(strikePrice): comparison['return']
-            for strikePrice, comparison in comparisons.items()
-        }
-        pprint(allReturns)
+        if constants.verboseOutput:
+            print(f"{symbol} {contract} {expiration} Here are the returns by strike")
+            allReturns = {
+                float(strikePrice): comparison['return']
+                for strikePrice, comparison in comparisons.items()
+            }
+            pprint(allReturns)
 
         allComparisons.extend(comparisons.values())
 
@@ -193,9 +202,9 @@ def analyzeSymbolOptions(symbol, contract, priceIncrement):
     # plt.show()
 
 def analyzeAllOptions():
-    for symbol in constants.symbolsToTrade:
-        allComparisons = []
+    allComparisons = []
 
+    for symbol in constants.symbolsToTrade:
         # Analyze the PUTS
         allComparisons.extend(analyzeSymbolOptions(
             symbol=symbol,

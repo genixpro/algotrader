@@ -17,6 +17,7 @@
 - Calculations need to take into account trading fees
 - Need a better metric then MSE for back-testing and optimizing the monte-carlo price simulation
 - NEED UNIT TESTS
+- Switch from using the constants.verboseOutput option to a proper logging system
 
 - do I make this public?
 

@@ -13,6 +13,8 @@ optionChainEndPriceRatio = 2.0
 optionClearingPriceSpreadMidpoint = 0.7
 optionMaxExpirationTimeDays = 25
 
+verboseOutput = False
+
 symbolsToTrade = [
     "MGC",
     "HOOD",
