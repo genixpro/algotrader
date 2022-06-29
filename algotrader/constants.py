@@ -7,13 +7,11 @@ investmentSimulationConsecutiveTrades = 25
 investmentSimulationNumberOfSimulations = 10000
 investmentSimulationOutlierProportionToDiscard = 0.001
 
-symbolToAnalyze = "MGC"
-expirationToAnalyze = '2022-07-15:16'
-tradingDaysRemaining = 13
 optionPriceIncrement = 0.5
-optionChainStartPriceRatio = 0.3
+optionChainStartPriceRatio = 0.5
 optionChainEndPriceRatio = 2.0
 optionClearingPriceSpreadMidpoint = 0.7
+optionMaxExpirationTimeDays = 25
 
 symbolsToTrade = [
     "MGC",

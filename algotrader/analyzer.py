@@ -3,6 +3,7 @@ from pprint import pprint, pformat
 from matplotlib import pyplot as plt
 import numpy
 import numpy.random
+import holidays
 from algotrader import ameritrade
 from algotrader import historical_data
 from algotrader import simulation
@@ -78,6 +79,9 @@ def compareOptionChainContracts(priceSimulation, profitsByStrike, optionChain, e
         optionAnnualizedReturn = numpy.power(1 + optionReturn, 365 / differenceDays) - 1
 
         comparisons[float(strikePrice)] = {
+            "symbol": symbol,
+            "expiration": expiration,
+            "strike": strikePrice,
             "expectedProfit": round(expectedProfit, 2),
             "clearingPrice": round(clearingPrice, 2),
             "gain": round(gain, 3),
@@ -115,56 +119,99 @@ def runPriceSimulation(symbol, historicalsEndDate, predictionDays, datapoints=No
 
     return (priceSimulation, currentOpenPrice)
 
-def analyzeSymbolOptions(symbol, contract, expiration, priceIncrement, tradingDaysRemaining):
-    print("Fetching current options quotes")
+def getDatetimeObjectForOptionExpiration(expiration):
+    return datetime.datetime.strptime(expiration.split(":")[0], "%Y-%m-%d")
+
+def computeTradingDaysRemainingForExpiration(expiration):
+    us_holidays = holidays.country_holidays('US')
+
+    currentDate = datetime.datetime.now()
+
+    expirationDate = getDatetimeObjectForOptionExpiration(expiration)
+
+    tradingDays = 0
+    while currentDate < expirationDate:
+        # Check if its between monday and friday
+        if currentDate.isoweekday() >=1 and currentDate.isoweekday() <= 5:
+            dateWithoutTime = datetime.date(year=currentDate.year, month=currentDate.month, day=currentDate.day)
+            if dateWithoutTime not in us_holidays:
+                tradingDays += 1
+
+        currentDate = currentDate + datetime.timedelta(days=1)
+
+    # Add in one extra day for the expiration date itself
+    tradingDays += 1
+
+    return tradingDays
+
+def analyzeSymbolOptions(symbol, contract, priceIncrement):
+    print(f"{symbol} {contract} Fetching current options quotes")
     putOptionChain = ameritrade.getOptionChain(symbol, contract)
 
-    print("Available option expiration dates")
-    pprint(list(putOptionChain[getOptionChainDetailsFieldForContractType(contract)].keys()))
+    print(f"{symbol} {contract} Available option expiration dates")
+    expirationDates = list(putOptionChain[getOptionChainDetailsFieldForContractType(contract)].keys())
+    pprint(expirationDates)
 
-    print("Running primary price simulation")
-    historicalsEndDate = datetime.datetime.now() + datetime.timedelta(days=1)
-    (priceSimulation, currentOpenPrice) = runPriceSimulation(
-        symbol=symbol,
-        historicalsEndDate=historicalsEndDate,
-        predictionDays=tradingDaysRemaining)
+    allComparisons = []
 
-    print("Computing expected profits for all the different available options")
-    profitsByStrike = computeExpectedProfitsForFullOptionsChain(priceSimulation, currentOpenPrice, priceIncrement, contract)
+    for expiration in expirationDates:
+        if (getDatetimeObjectForOptionExpiration(expiration) - datetime.datetime.now()).days > constants.optionMaxExpirationTimeDays:
+            print(f"Skipping analysis for {symbol} {contract} {expiration} because its too far in the future")
+            continue
 
-    print(f"Here are the expected profits at different strikes for {contract} options:")
-    pprint(profitsByStrike)
+        tradingDaysRemaining = computeTradingDaysRemainingForExpiration(expiration)
 
-    comparisons = compareOptionChainContracts(priceSimulation, profitsByStrike, putOptionChain, expiration, contract, symbol)
-    # print("Here are the comparison details for different option contracts")
-    # pprint(comparisons)
+        print(f"{symbol} {contract} {expiration} Running primary price simulation for {tradingDaysRemaining} trading days")
+        historicalsEndDate = datetime.datetime.now() + datetime.timedelta(days=1)
+        (priceSimulation, currentOpenPrice) = runPriceSimulation(
+            symbol=symbol,
+            historicalsEndDate=historicalsEndDate,
+            predictionDays=tradingDaysRemaining)
 
-    print("Here are put returns by strike")
-    allReturns = {
-        float(strikePrice): comparison['return']
-        for strikePrice, comparison in comparisons.items()
-    }
-    pprint(allReturns)
+        print(f"{symbol} {contract} {expiration} Computing expected profits for all the different available options")
+        profitsByStrike = computeExpectedProfitsForFullOptionsChain(priceSimulation, currentOpenPrice, priceIncrement, contract)
 
-    plt.scatter(allReturns.keys(), allReturns.values(), label="Returns by strike")
-    plt.show()
+        print(f"{symbol} {contract} {expiration} Here are the expected profits at different strikes for the options:")
+        pprint(profitsByStrike)
+
+        comparisons = compareOptionChainContracts(priceSimulation, profitsByStrike, putOptionChain, expiration, contract, symbol)
+        # print("Here are the comparison details for different option contracts")
+        # pprint(comparisons)
+
+        print(f"{symbol} {contract} {expiration} Here are the returns by strike")
+        allReturns = {
+            float(strikePrice): comparison['return']
+            for strikePrice, comparison in comparisons.items()
+        }
+        pprint(allReturns)
+
+        allComparisons.extend(comparisons.values())
+
+    return allComparisons
+
+    # plt.scatter(allReturns.keys(), allReturns.values(), label="Returns by strike")
+    # plt.show()
 
 def analyzeAllOptions():
-    # Analyze the PUTS
-    analyzeSymbolOptions(
-        symbol=constants.symbolToAnalyze,
-        contract="PUT",
-        expiration=constants.expirationToAnalyze,
-        priceIncrement=constants.optionPriceIncrement,
-        tradingDaysRemaining=constants.tradingDaysRemaining,
-    )
+    for symbol in constants.symbolsToTrade:
+        allComparisons = []
 
-    # Analyze the CALLS
-    analyzeSymbolOptions(
-        symbol=constants.symbolToAnalyze,
-        contract="CALL",
-        expiration=constants.expirationToAnalyze,
-        priceIncrement=constants.optionPriceIncrement,
-        tradingDaysRemaining=constants.tradingDaysRemaining,
-    )
+        # Analyze the PUTS
+        allComparisons.extend(analyzeSymbolOptions(
+            symbol=symbol,
+            contract="PUT",
+            priceIncrement=constants.optionPriceIncrement,
+        ))
 
+        # Analyze the CALLS
+        allComparisons.extend(analyzeSymbolOptions(
+            symbol=symbol,
+            contract="CALL",
+            priceIncrement=constants.optionPriceIncrement,
+        ))
+
+        allComparisons = list(sorted(allComparisons, key=lambda comparison: comparison['annualizedReturn'], reverse=True))
+
+        # Output the top five options by return
+        print("Outputting the best options across all categories")
+        pprint(allComparisons[:10])
