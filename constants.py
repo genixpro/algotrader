@@ -1,13 +1,13 @@
 numWorkers = 30
 
-priceSimulationDaysOfHistoricalDataToUse = 90
+priceSimulationTradingDaysOfHistoricalDataToUse = 33
 priceSimulationNumberOfSimulations = 100000
 
 investmentSimulationConsecutiveTrades = 25
 investmentSimulationNumberOfSimulations = 10000
 
-symbolToAnalyze = "HOOD"
-expirationToAnalyze = '2022-07-15:17'
+symbolToAnalyze = "MGC"
+expirationToAnalyze = '2022-07-15:16'
 tradingDaysRemaining = 13
 optionPriceIncrement = 0.5
 optionChainStartPriceRatio = 0.3

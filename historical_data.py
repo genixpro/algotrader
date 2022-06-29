@@ -43,19 +43,21 @@ class HistoricalPrices:
             }, {"$set": item}, upsert=True)
 
 
-    def getRawDataBetweenDates(self, symbol, startDate, endDate):
+    def getRawDataBetweenDates(self, symbol, endDate, tradingDaysOfHistory):
         items = self.rawPricesCollection.find(
             filter={
                 "symbol": symbol,
                 "$and": [
-                    {"datetime": {"$gte": startDate}},
                     {"datetime": {"$lte": endDate}},
                 ]
             },
-            sort=[("datetime", pymongo.ASCENDING)]
+            sort=[("datetime", pymongo.DESCENDING)],
+            limit=tradingDaysOfHistory
         )
 
-        return list(items)
+        items = list(reversed(list(items)))
+
+        return items
 
     def getFirstRawDatapointAfterDate(self, symbol, date):
         first_item = self.rawPricesCollection.find_one(
@@ -70,8 +72,8 @@ class HistoricalPrices:
 
         return first_item
 
-    def getProcessedTimeSeriesBetweenDates(self, symbol, startDate, endDate):
-        rawDatapoints = self.getRawDataBetweenDates(symbol, startDate, endDate)
+    def getProcessedTimeSeries(self, symbol, endDate, tradingDaysOfHistory):
+        rawDatapoints = self.getRawDataBetweenDates(symbol, endDate, tradingDaysOfHistory)
 
         processedDatapoints = []
 

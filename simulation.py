@@ -6,9 +6,13 @@ from global_services import globalExecutor
 
 class PriceSimulationParameters:
     def __init__(self, datapoints):
-        self.dayChangeValues = numpy.array(list(filter(lambda d: d is not None, map(lambda d: d.dayChange, datapoints))))
-        self.gapPreviousValues = numpy.array(list(filter(lambda d: d is not None, map(lambda d: d.gapPrevious, datapoints))))
-        self.gapNextValues = numpy.array(list(filter(lambda d: d is not None, map(lambda d: d.gapNext, datapoints))))
+    #     self.dayChangeValues = numpy.array(list(filter(lambda d: d is not None, map(lambda d: d.dayChange, datapoints))))
+    #     self.gapPreviousValues = numpy.array(list(filter(lambda d: d is not None, map(lambda d: d.gapPrevious, datapoints))))
+    #     self.gapNextValues = numpy.array(list(filter(lambda d: d is not None, map(lambda d: d.gapNext, datapoints))))
+
+        self.dayChangeValues = list(filter(lambda d: d is not None, map(lambda d: d.dayChange, datapoints)))
+        self.gapPreviousValues = list(filter(lambda d: d is not None, map(lambda d: d.gapPrevious, datapoints)))
+        self.gapNextValues = list(filter(lambda d: d is not None, map(lambda d: d.gapNext, datapoints)))
 
         self.dayChangeStd = numpy.std(self.dayChangeValues)
         self.dayChangeMean = numpy.mean(self.dayChangeValues)
@@ -35,8 +39,14 @@ class SinglePriceSimulation:
         gapPreviousStd = self.simulationParameters.gapPreviousStd
         gapPreviousMean = self.simulationParameters.gapPreviousMean
 
-        sampledDayChangeValues = numpy.random.choice(a=dayChangeValues, size=numDays, replace=False)
-        sampledGapPreviousValues = numpy.random.choice(a=gapPreviousValues, size=(numDays - 1), replace=False)
+        # sampledDayChangeValues = numpy.random.choice(a=dayChangeValues, size=numDays, replace=True)
+        # sampledGapPreviousValues = numpy.random.choice(a=gapPreviousValues, size=(numDays - 1), replace=True)
+
+        # sampledDayChangeValues = random.choices(dayChangeValues, k=numDays)
+        # sampledGapPreviousValues = random.choices(gapPreviousValues, k=(numDays - 1))
+
+        sampledDayChangeValues = random.sample(dayChangeValues, k=numDays)
+        sampledGapPreviousValues = random.sample(gapPreviousValues, k=(numDays - 1))
 
         cumulativeDayChanges = numpy.prod(sampledDayChangeValues)
         cumulativeGapPrevious = numpy.prod(sampledGapPreviousValues)

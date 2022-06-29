@@ -95,12 +95,10 @@ def compareOptionChainContracts(priceSimulation, putProfitsByStrike, callProfits
 
     return comparisons
 
-def runPriceSimulation(symbol, historicalsEndDate, predictionDays):
-    historicalsStartDate = historicalsEndDate - datetime.timedelta(days=constants.priceSimulationDaysOfHistoricalDataToUse + 1)
-
-    historicals = historical_data.HistoricalPrices()
-
-    datapoints = historicals.getProcessedTimeSeriesBetweenDates(symbol, historicalsStartDate, historicalsEndDate)
+def runPriceSimulation(symbol, historicalsEndDate, predictionDays, datapoints=None):
+    if datapoints is None:
+        historicals = historical_data.HistoricalPrices()
+        datapoints = historicals.getProcessedTimeSeries(symbol, historicalsEndDate, constants.priceSimulationTradingDaysOfHistoricalDataToUse + 1)
 
     currentOpenPrice = datapoints[-1].open
     datapoints = datapoints[:-1]
@@ -115,55 +113,64 @@ def runPriceSimulation(symbol, historicalsEndDate, predictionDays):
 
     return (priceSimulation, currentOpenPrice)
 
+def backtestPriceSimulationOneSymbol(symbol, predictionDays, daysOfHistoricalData):
+    constants.priceSimulationNumberOfSimulations = 100
 
-def backtestPriceSimulation(predictionDays=30):
-    differences = []
+    yearLength = 250
 
+    nextDay = datetime.datetime.now() + datetime.timedelta(days=1)
     historicals = historical_data.HistoricalPrices()
+    datapoints = historicals.getProcessedTimeSeries(symbol, nextDay, yearLength)
 
     bufferDays = 3
 
-    # TODO: Need a way better and more principled way of doing this
-    weekendNonTradeDays = int(2 * predictionDays / 7)
-    tradingDays = predictionDays - weekendNonTradeDays
-    # print("weekendNonTradeDays", weekendNonTradeDays)
-    # print("tradingDays", tradingDays)
+    differences = []
+    for n in range(1, len(datapoints) - daysOfHistoricalData - predictionDays - bufferDays):
+        predictionPoint = len(datapoints) - n - 1
+        dataEndPoint = predictionPoint - predictionDays
+        dataStartPoint = dataEndPoint - daysOfHistoricalData
 
-    simulationExecutions = []
-    for symbol in constants.symbolsToTrade:
-        for n in range(predictionDays + bufferDays, 350 - constants.priceSimulationDaysOfHistoricalDataToUse - predictionDays):
-            historicalsEndDate = datetime.datetime.now() - datetime.timedelta(days=n)
-            predictionDate = historicalsEndDate + datetime.timedelta(days=predictionDays)
+        simulationDataPoints = datapoints[dataStartPoint:dataEndPoint]
 
-            actualDataPoint = historicals.getFirstRawDatapointAfterDate(symbol, predictionDate)
-            actualClosingPrice = actualDataPoint['close']
+        historicalsEndDate = datetime.datetime.now() - datetime.timedelta(days=(n + predictionDays))
 
-            future = global_services.globalExecutor.submit(runPriceSimulation, symbol, historicalsEndDate, tradingDays)
+        actualDataPoint = datapoints[predictionPoint]
+        actualClosingPrice = actualDataPoint.close
 
-            simulationExecutions.append((symbol, actualClosingPrice, future))
-
-    for simulationTuple in simulationExecutions:
-        (symbol, actualClosingPrice, future) = simulationTuple
-        (simulation, currentOpenPrice) = future.result()
-        # print(f"{symbol} Actual: ${actualClosingPrice:.2f} Mean pred: ${numpy.mean(simulation.endingPrices):.2f}")
+        (simulation, currentOpenPrice) = runPriceSimulation(symbol, historicalsEndDate, predictionDays, datapoints=simulationDataPoints)
 
         simulationDifferences = numpy.array(simulation.endingPrices) - numpy.array(actualClosingPrice)
         simulationDifferences /= numpy.array(actualClosingPrice)
-        differences.extend(simulationDifferences)
 
+        differences.extend(simulationDifferences)
 
     lossSquared = numpy.square(differences)
     meanSquaredError = numpy.mean(lossSquared)
-
     return meanSquaredError
 
+
+def backtestPriceSimulation(predictionDays=22, daysOfHistoricalData=constants.priceSimulationTradingDaysOfHistoricalDataToUse):
+    simulationExecutions = []
+    for symbol in constants.symbolsToTrade:
+        future = global_services.globalExecutor.submit(backtestPriceSimulationOneSymbol, symbol, predictionDays, daysOfHistoricalData)
+        simulationExecutions.append((symbol, future))
+
+    errors = []
+    for simulationTuple in simulationExecutions:
+        (symbol, future) = simulationTuple
+        meanSquaredError = future.result()
+        # print(f"Symbol {symbol} - Average error {meanSquaredError:.4f}")
+        errors.append(meanSquaredError)
+
+    averageError = numpy.mean(errors)
+
+    return averageError
+
 def optimizeNumberOfHistoricalDays():
-    constants.priceSimulationNumberOfSimulations = 500
-    historicalDaysToTest = list(range(35, 150))
+    historicalDaysToTest = list(range(23, 150))
     meanSquaredErrors = []
     for historicalDays in historicalDaysToTest:
-        constants.priceSimulationDaysOfHistoricalDataToUse = historicalDays
-        meanSquaredError = backtestPriceSimulation()
+        meanSquaredError = backtestPriceSimulation(daysOfHistoricalData=historicalDays)
         print(f"Days: {historicalDays} - Final MSE {meanSquaredError:.5f}")
         meanSquaredErrors.append(meanSquaredError)
 
