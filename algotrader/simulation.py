@@ -146,11 +146,17 @@ class MonteCarloInvestmentSimulation:
         futures = []
 
         proportionsToTest = []
-        # proportionsToTest.extend(numpy.arange(0.002, 0.01, 0.002))
-        # proportionsToTest.extend(numpy.arange(0.01, 0.05, 0.01))
-        # proportionsToTest.extend(numpy.arange(0.05, 0.20, 0.025))
-        # proportionsToTest.extend(numpy.arange(0.20, 1.01, 0.05))
-        proportionsToTest.extend(numpy.arange(0.05, 1.01, 0.05))
+        if constants.generateCharts:
+            # If we are generating charts, add in some
+            # extra data points near the 0% proportion,
+            # just so we can see the effect that occurs
+            # when very close to zero
+            proportionsToTest.extend(numpy.arange(0.002, 0.01, 0.002))
+            proportionsToTest.extend(numpy.arange(0.01, 0.05, 0.01))
+            proportionsToTest.extend(numpy.arange(0.05, 0.20, 0.025))
+            proportionsToTest.extend(numpy.arange(0.20, 1.01, 0.05))
+        else:
+            proportionsToTest.extend(numpy.arange(0.05, 1.01, 0.05))
 
         for proportionToInvest in proportionsToTest:
             future = globalExecutor.submit(self.computeAverageReturn, strikePrice, contractCost, contract, proportionToInvest)
