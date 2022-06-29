@@ -2,13 +2,11 @@ import analyzer
 import cProfile
 import pstats
 from pstats import SortKey
+import constants
+import historical_data
 
 def run():
-    # for symbol in constants.symbolsToTrade:
-    #     historicals = historicaldata.HistoricalPrices()
-    #     historicals.saveRawDataLocally(symbol)
-    analyzer.analyzeSymbolOptions()
-    # analyzer.optimizeNumberOfHistoricalDays()
+    analyzer.optimizeNumberOfHistoricalDays()
 
     # cProfile.run('analyzer.optimizeNumberOfHistoricalDays()', 'restats')
     # p = pstats.Stats('restats')

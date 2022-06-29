@@ -1,8 +1,8 @@
 import numpy
 import random
-import historical_data
+from algotrader import historical_data
 import matplotlib.pyplot as plt
-from global_services import globalExecutor
+from algotrader.global_services import globalExecutor
 
 class PriceSimulationParameters:
     def __init__(self, datapoints):

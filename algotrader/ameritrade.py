@@ -9,10 +9,14 @@ from pprint import pprint
 ameritradeAPIKey = "S20BUIA2BJBURHRRWDLIPAUCCUYDELEE"
 
 def getPriceData(symbol):
+    startDate = datetime.datetime.now() - datetime.timedelta(days=365)
+    endDate = datetime.datetime.now() + datetime.timedelta(days=1)
+
     queryParams = {
             "apikey": ameritradeAPIKey,
             "periodType": "year",
-            "period": 1,
+            "startDate": round(startDate.timestamp() * 1000),
+            "endDate": round(endDate.timestamp() * 1000),
             "frequencyType": "daily",
             "frequency": "1",
         }

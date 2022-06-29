@@ -3,11 +3,10 @@ from pprint import pprint
 from matplotlib import pyplot as plt
 import numpy
 import numpy.random
-import ameritrade
-import historical_data
-import simulation
-import constants
-import global_services
+from algotrader import ameritrade
+from algotrader import historical_data
+from algotrader import simulation
+from algotrader import constants
 
 def showEndingPriceChart(endingPrices):
     plt.hist(endingPrices, bins=25)
@@ -100,6 +99,8 @@ def runPriceSimulation(symbol, historicalsEndDate, predictionDays, datapoints=No
         historicals = historical_data.HistoricalPrices()
         datapoints = historicals.getProcessedTimeSeries(symbol, historicalsEndDate, constants.priceSimulationTradingDaysOfHistoricalDataToUse + 1)
 
+    print(f"Latest datapoint for symbol {symbol}")
+    pprint(datapoints[-1].__dict__)
     currentOpenPrice = datapoints[-1].open
     datapoints = datapoints[:-1]
 
@@ -112,72 +113,6 @@ def runPriceSimulation(symbol, historicalsEndDate, predictionDays, datapoints=No
     priceSimulation.runSimulations()
 
     return (priceSimulation, currentOpenPrice)
-
-def backtestPriceSimulationOneSymbol(symbol, predictionDays, daysOfHistoricalData):
-    constants.priceSimulationNumberOfSimulations = 100
-
-    yearLength = 250
-
-    nextDay = datetime.datetime.now() + datetime.timedelta(days=1)
-    historicals = historical_data.HistoricalPrices()
-    datapoints = historicals.getProcessedTimeSeries(symbol, nextDay, yearLength)
-
-    bufferDays = 3
-
-    differences = []
-    for n in range(1, len(datapoints) - daysOfHistoricalData - predictionDays - bufferDays):
-        predictionPoint = len(datapoints) - n - 1
-        dataEndPoint = predictionPoint - predictionDays
-        dataStartPoint = dataEndPoint - daysOfHistoricalData
-
-        simulationDataPoints = datapoints[dataStartPoint:dataEndPoint]
-
-        historicalsEndDate = datetime.datetime.now() - datetime.timedelta(days=(n + predictionDays))
-
-        actualDataPoint = datapoints[predictionPoint]
-        actualClosingPrice = actualDataPoint.close
-
-        (simulation, currentOpenPrice) = runPriceSimulation(symbol, historicalsEndDate, predictionDays, datapoints=simulationDataPoints)
-
-        simulationDifferences = numpy.array(simulation.endingPrices) - numpy.array(actualClosingPrice)
-        simulationDifferences /= numpy.array(actualClosingPrice)
-
-        differences.extend(simulationDifferences)
-
-    lossSquared = numpy.square(differences)
-    meanSquaredError = numpy.mean(lossSquared)
-    return meanSquaredError
-
-
-def backtestPriceSimulation(predictionDays=22, daysOfHistoricalData=constants.priceSimulationTradingDaysOfHistoricalDataToUse):
-    simulationExecutions = []
-    for symbol in constants.symbolsToTrade:
-        future = global_services.globalExecutor.submit(backtestPriceSimulationOneSymbol, symbol, predictionDays, daysOfHistoricalData)
-        simulationExecutions.append((symbol, future))
-
-    errors = []
-    for simulationTuple in simulationExecutions:
-        (symbol, future) = simulationTuple
-        meanSquaredError = future.result()
-        # print(f"Symbol {symbol} - Average error {meanSquaredError:.4f}")
-        errors.append(meanSquaredError)
-
-    averageError = numpy.mean(errors)
-
-    return averageError
-
-def optimizeNumberOfHistoricalDays():
-    historicalDaysToTest = list(range(23, 150))
-    meanSquaredErrors = []
-    for historicalDays in historicalDaysToTest:
-        meanSquaredError = backtestPriceSimulation(daysOfHistoricalData=historicalDays)
-        print(f"Days: {historicalDays} - Final MSE {meanSquaredError:.5f}")
-        meanSquaredErrors.append(meanSquaredError)
-
-    plt.plot(historicalDaysToTest, meanSquaredErrors)
-    plt.show()
-
-
 
 def analyzeSymbolOptions():
     putOptionChain = ameritrade.getOptionChain(constants.symbolToAnalyze, "PUT")

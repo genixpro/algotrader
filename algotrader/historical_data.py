@@ -1,4 +1,4 @@
-import ameritrade
+from algotrader import ameritrade
 import pymongo
 
 class PriceDatapoint:
