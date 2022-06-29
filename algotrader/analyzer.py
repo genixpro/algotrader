@@ -82,6 +82,7 @@ def compareOptionChainContracts(priceSimulation, profitsByStrike, optionChain, e
             "symbol": symbol,
             "expiration": expiration,
             "strike": strikePrice,
+            "contract": contract,
             "expectedProfit": round(expectedProfit, 2),
             "clearingPrice": round(clearingPrice, 2),
             "gain": round(gain, 3),
