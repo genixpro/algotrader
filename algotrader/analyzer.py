@@ -108,7 +108,14 @@ def runPriceSimulation(symbol, historicalsEndDate, predictionDays, datapoints=No
     if constants.verboseOutput:
         print(f"Latest datapoint for symbol {symbol}")
         pprint(datapoints[-1].__dict__)
-    currentOpenPrice = datapoints[-1].open
+    # TODO: unsure if this should be set to the current days open price,
+    #  or the current price right as of this moment (which would be the "close" price here)
+    #  Currently setting it to the current price right as of this moment, so we make sure we
+    #  consider price movements that occurred already today. But this isn't a perfect or
+    #  principled way of considering the current intra-day price movement. Really the first
+    #  step of the price simulation should just be done with a smaller variance depending on
+    #  how many hours of trading are left in the current day.
+    currentOpenPrice = datapoints[-1].close
     datapoints = datapoints[:-1]
 
     priceSimulation = simulation.MonteCarloPriceSimulation(
@@ -205,24 +212,34 @@ def analyzeAllOptions():
     allComparisons = []
 
     for symbol in constants.symbolsToTrade:
+        symbolComparisons = []
+
         print(f"Analyzing symbol {symbol}")
 
         # Analyze the PUTS
-        allComparisons.extend(analyzeSymbolOptions(
+        symbolComparisons.extend(analyzeSymbolOptions(
             symbol=symbol,
             contract="PUT",
             priceIncrement=constants.optionPriceIncrement,
         ))
 
         # Analyze the CALLS
-        allComparisons.extend(analyzeSymbolOptions(
+        symbolComparisons.extend(analyzeSymbolOptions(
             symbol=symbol,
             contract="CALL",
             priceIncrement=constants.optionPriceIncrement,
         ))
 
+        symbolComparisons = list(sorted(symbolComparisons, key=lambda comparison: comparison['annualizedReturn'], reverse=True))
+
+        # Output the top ten options by return
+        print(f"Best options for this symbol ({symbol})")
+        pprint(symbolComparisons[:10], indent=8)
+
+        allComparisons.extend(symbolComparisons)
+
         allComparisons = list(sorted(allComparisons, key=lambda comparison: comparison['annualizedReturn'], reverse=True))
 
         # Output the top ten options by return
-        print("Outputting the best options across all categories")
-        pprint(allComparisons[:10])
+        print("Outputting the best options across all symbols and categories")
+        pprint(allComparisons[:10], indent=8)

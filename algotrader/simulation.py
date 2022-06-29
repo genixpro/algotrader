@@ -208,7 +208,7 @@ class MonteCarloInvestmentSimulation:
 
         if not os.path.exists("images"):
             os.mkdir("images")
-        plt.savefig(f"images/{symbol}-{strikePrice}-optimal-investment-proportion.png")
+        plt.savefig(f"images/{symbol}-{strikePrice}-{contract}-optimal-investment-proportion.png")
         plt.close(fig)
 
         returnFitOptimalAdjustedReturnRate = None
