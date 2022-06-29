@@ -4,8 +4,8 @@ def run():
     # for symbol in constants.symbolsToTrade:
     #     historicals = historicaldata.HistoricalPrices()
     #     historicals.saveRawDataLocally(symbol)
-    analyzer.analyzeSymbolOptions()
-
+    # analyzer.analyzeSymbolOptions()
+    analyzer.optimizeNumberOfHistoricalDays()
 
 
 

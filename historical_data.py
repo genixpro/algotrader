@@ -1,11 +1,6 @@
 import ameritrade
 import pymongo
 
-
-client = pymongo.MongoClient()
-db = client['algotrade']
-
-
 class PriceDatapoint:
     def __init__(self, rawDatapoint=None):
         if rawDatapoint is not None:
@@ -22,11 +17,12 @@ class PriceDatapoint:
         self.gapNext = None
 
 
-
-
 class HistoricalPrices:
     def __init__(self):
-        self.rawPricesCollection = db['historical_prices_raw']
+        self.client = pymongo.MongoClient()
+        self.db = self.client['algotrade']
+
+        self.rawPricesCollection = self.db['historical_prices_raw']
 
         self.rawPricesCollection.create_index(
             [
@@ -60,6 +56,19 @@ class HistoricalPrices:
         )
 
         return list(items)
+
+    def getFirstRawDatapointAfterDate(self, symbol, date):
+        first_item = self.rawPricesCollection.find_one(
+            filter={
+                "symbol": symbol,
+                "$and": [
+                    {"datetime": {"$gte": date}}
+                ]
+            },
+            sort=[("datetime", pymongo.ASCENDING)]
+        )
+
+        return first_item
 
     def getProcessedTimeSeriesBetweenDates(self, symbol, startDate, endDate):
         rawDatapoints = self.getRawDataBetweenDates(symbol, startDate, endDate)

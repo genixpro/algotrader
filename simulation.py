@@ -6,9 +6,9 @@ from global_services import globalExecutor
 
 class PriceSimulationParameters:
     def __init__(self, datapoints):
-        self.dayChangeValues = list(filter(lambda d: d is not None, map(lambda d: d.dayChange, datapoints)))
-        self.gapPreviousValues = list(filter(lambda d: d is not None, map(lambda d: d.gapPrevious, datapoints)))
-        self.gapNextValues = list(filter(lambda d: d is not None, map(lambda d: d.gapNext, datapoints)))
+        self.dayChangeValues = numpy.array(list(filter(lambda d: d is not None, map(lambda d: d.dayChange, datapoints))))
+        self.gapPreviousValues = numpy.array(list(filter(lambda d: d is not None, map(lambda d: d.gapPrevious, datapoints))))
+        self.gapNextValues = numpy.array(list(filter(lambda d: d is not None, map(lambda d: d.gapNext, datapoints))))
 
         self.dayChangeStd = numpy.std(self.dayChangeValues)
         self.dayChangeMean = numpy.mean(self.dayChangeValues)
@@ -35,24 +35,14 @@ class SinglePriceSimulation:
         gapPreviousStd = self.simulationParameters.gapPreviousStd
         gapPreviousMean = self.simulationParameters.gapPreviousMean
 
-        sampledDayChangeValues = random.sample(dayChangeValues, numDays)
-        sampledGapPreviousValues = random.sample(gapPreviousValues, numDays)
-        random.shuffle(sampledDayChangeValues)
-        random.shuffle(sampledGapPreviousValues)
+        sampledDayChangeValues = numpy.random.choice(a=dayChangeValues, size=numDays, replace=False)
+        sampledGapPreviousValues = numpy.random.choice(a=gapPreviousValues, size=(numDays - 1), replace=False)
 
-        lastDatapoint = None
-        nextDatapoint = historical_data.PriceDatapoint()
-        for n in range(numDays):
-            if n == 0:
-                nextDatapoint.open = currentOpenPrice
-            else:
-                gapPrevious = sampledGapPreviousValues[n]
-                nextDatapoint.open = lastDatapoint.close * gapPrevious
-
-            dayChange = sampledDayChangeValues[n]
-            nextDatapoint.close = nextDatapoint.open * dayChange
-
-            lastDatapoint = nextDatapoint
+        cumulativeDayChanges = numpy.prod(sampledDayChangeValues)
+        cumulativeGapPrevious = numpy.prod(sampledGapPreviousValues)
+        lastDatapoint = historical_data.PriceDatapoint()
+        lastDatapoint.close = float(currentOpenPrice * cumulativeDayChanges * cumulativeGapPrevious)
+        lastDatapoint.open = float(lastDatapoint.close / sampledDayChangeValues[-1])
 
         return lastDatapoint
 

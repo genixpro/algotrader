@@ -1,4 +1,4 @@
-numWorkers = 32
+numWorkers = 30
 
 priceSimulationDaysOfHistoricalDataToUse = 90
 priceSimulationNumberOfSimulations = 100000

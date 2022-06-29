@@ -7,6 +7,7 @@ import ameritrade
 import historical_data
 import simulation
 import constants
+import global_services
 
 def showEndingPriceChart(endingPrices):
     plt.hist(endingPrices, bins=25)
@@ -94,6 +95,81 @@ def compareOptionChainContracts(priceSimulation, putProfitsByStrike, callProfits
 
     return comparisons
 
+def runPriceSimulation(symbol, historicalsEndDate, predictionDays):
+    historicalsStartDate = historicalsEndDate - datetime.timedelta(days=constants.priceSimulationDaysOfHistoricalDataToUse + 1)
+
+    historicals = historical_data.HistoricalPrices()
+
+    datapoints = historicals.getProcessedTimeSeriesBetweenDates(symbol, historicalsStartDate, historicalsEndDate)
+
+    currentOpenPrice = datapoints[-1].open
+    datapoints = datapoints[:-1]
+
+    priceSimulation = simulation.MonteCarloPriceSimulation(
+        datapoints=datapoints,
+        currentOpenPrice=currentOpenPrice,
+        numDays=predictionDays,
+        numberOfSimulations=constants.priceSimulationNumberOfSimulations
+    )
+    priceSimulation.runSimulations()
+
+    return (priceSimulation, currentOpenPrice)
+
+
+def backtestPriceSimulation(predictionDays=30):
+    differences = []
+
+    historicals = historical_data.HistoricalPrices()
+
+    bufferDays = 3
+
+    # TODO: Need a way better and more principled way of doing this
+    weekendNonTradeDays = int(2 * predictionDays / 7)
+    tradingDays = predictionDays - weekendNonTradeDays
+    # print("weekendNonTradeDays", weekendNonTradeDays)
+    # print("tradingDays", tradingDays)
+
+    simulationExecutions = []
+    for symbol in constants.symbolsToTrade:
+        for n in range(predictionDays + bufferDays, 350 - constants.priceSimulationDaysOfHistoricalDataToUse - predictionDays):
+            historicalsEndDate = datetime.datetime.now() - datetime.timedelta(days=n)
+            predictionDate = historicalsEndDate + datetime.timedelta(days=predictionDays)
+
+            actualDataPoint = historicals.getFirstRawDatapointAfterDate(symbol, predictionDate)
+            actualClosingPrice = actualDataPoint['close']
+
+            future = global_services.globalExecutor.submit(runPriceSimulation, symbol, historicalsEndDate, tradingDays)
+
+            simulationExecutions.append((symbol, actualClosingPrice, future))
+
+    for simulationTuple in simulationExecutions:
+        (symbol, actualClosingPrice, future) = simulationTuple
+        (simulation, currentOpenPrice) = future.result()
+        # print(f"{symbol} Actual: ${actualClosingPrice:.2f} Mean pred: ${numpy.mean(simulation.endingPrices):.2f}")
+
+        simulationDifferences = numpy.array(simulation.endingPrices) - numpy.array(actualClosingPrice)
+        simulationDifferences /= numpy.array(actualClosingPrice)
+        differences.extend(simulationDifferences)
+
+
+    lossSquared = numpy.square(differences)
+    meanSquaredError = numpy.mean(lossSquared)
+
+    return meanSquaredError
+
+def optimizeNumberOfHistoricalDays():
+    constants.priceSimulationNumberOfSimulations = 500
+    historicalDaysToTest = list(range(35, 150))
+    meanSquaredErrors = []
+    for historicalDays in historicalDaysToTest:
+        constants.priceSimulationDaysOfHistoricalDataToUse = historicalDays
+        meanSquaredError = backtestPriceSimulation()
+        print(f"Days: {historicalDays} - Final MSE {meanSquaredError:.5f}")
+        meanSquaredErrors.append(meanSquaredError)
+
+    plt.plot(historicalDaysToTest, meanSquaredErrors)
+    plt.show()
+
 
 
 def analyzeSymbolOptions():
@@ -103,23 +179,11 @@ def analyzeSymbolOptions():
     print("Available option expiration dates")
     pprint(list(putOptionChain['putExpDateMap'].keys()))
 
-    historicalsStartDate = datetime.datetime.now() - datetime.timedelta(days=constants.priceSimulationDaysOfHistoricalDataToUse)
     historicalsEndDate = datetime.datetime.now() + datetime.timedelta(days=1)
-
-    historicals = historical_data.HistoricalPrices()
-
-    datapoints = historicals.getProcessedTimeSeriesBetweenDates(constants.symbolToAnalyze, historicalsStartDate, historicalsEndDate)
-
-    currentOpenPrice = datapoints[-1].open
-    datapoints = datapoints[:-1]
-
-    priceSimulation = simulation.MonteCarloPriceSimulation(
-        datapoints=datapoints,
-        currentOpenPrice=currentOpenPrice,
-        numDays=constants.tradingDaysRemaining,
-        numberOfSimulations=constants.priceSimulationNumberOfSimulations
-    )
-    priceSimulation.runSimulations()
+    (priceSimulation, currentOpenPrice) = runPriceSimulation(
+        symbol=constants.symbolToAnalyze,
+        historicalsEndDate=historicalsEndDate,
+        predictionDays=constants.tradingDaysRemaining)
 
     putProfitsByStrike = computeExpectedProfitsForFullOptionsChain(priceSimulation, currentOpenPrice, constants.optionPriceIncrement, "PUT")
     callProfitsByStrike = computeExpectedProfitsForFullOptionsChain(priceSimulation, currentOpenPrice, constants.optionPriceIncrement, "CALL")

@@ -2,7 +2,7 @@
 - Change caching for options requests to use mongodb, possibly with TTL index (or maybe we just keep the data forever?)
 - Automatically compute the number of trading days between now and option expiration. Take into account holidays.
 - Smoothly handle when price simulation is run after hours - changes how the very first timestep is handled. No open price - need to compute gap over previous close price
-- Need a mechanism to back-test the monte carlo simulation and optimize its hyperparameters (such as amount of history to consider)
+- [IN PROGRESS] Need a mechanism to back-test the monte carlo simulation and optimize its hyperparameters (such as amount of history to consider)
 - See if we can improve price simulation by taking into account regression to mean
 - Something still off with investment simulation to determine optimal amount to invest v.s. amount keep in cash
 - Split investment simulation into two classes - one which performs a single simulation, and the other which performs the montecarlo calculation across all simulations
@@ -15,5 +15,8 @@
 - Can the script automatically spit out commands, like orders I should execute?
 - Can we predict if we should sell an option early, at its current price, rather then wait it out to excersize it?
 - Calculations need to take into account trading fees
+- Need a better metric then MSE for back-testing and optimizing the monte-carlo price simulation
+- NEED UNIT TESTS
 
 - do I make this public?
+
