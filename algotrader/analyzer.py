@@ -67,7 +67,7 @@ def compareOptionChainContracts(priceSimulation, profitsByStrike, optionChain, e
                                                                          outlierProportionToDiscard=constants.investmentSimulationOutlierProportionToDiscard,
                                                                          )
 
-        optimalInvestmentProportion, lossRate, nonAdjustedOptimalInvestmentProportion = investmentSimulation.computeOptimalInvestmentAmount(strikePrice, clearingPrice, contract, symbol)
+        optimalInvestmentProportion, lossRate, nonAdjustedOptimalInvestmentProportion = investmentSimulation.computeOptimalInvestmentAmount(strikePrice, clearingPrice, contract, symbol, expiration)
 
         probabilityInTheMoney = priceSimulation.computeProbabilityOptionInMoney(float(strikePrice), contract)
 

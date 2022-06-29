@@ -141,7 +141,7 @@ class MonteCarloInvestmentSimulation:
 
         return averageReturn, lossRate
 
-    def computeOptimalInvestmentAmount(self, strikePrice, contractCost, contract, symbol):
+    def computeOptimalInvestmentAmount(self, strikePrice, contractCost, contract, symbol, expiration):
         futures = []
 
         proportionsToTest = []
@@ -208,7 +208,7 @@ class MonteCarloInvestmentSimulation:
 
         if not os.path.exists("images"):
             os.mkdir("images")
-        plt.savefig(f"images/{symbol}-{strikePrice}-{contract}-optimal-investment-proportion.png")
+        plt.savefig(f"images/{symbol}-{contract}-{expiration}-{strikePrice}-optimal-investment-proportion.png")
         plt.close(fig)
 
         returnFitOptimalAdjustedReturnRate = None
