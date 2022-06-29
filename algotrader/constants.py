@@ -5,6 +5,7 @@ priceSimulationNumberOfSimulations = 100000
 
 investmentSimulationConsecutiveTrades = 25
 investmentSimulationNumberOfSimulations = 10000
+investmentSimulationOutlierProportionToDiscard = 0.001
 
 symbolToAnalyze = "MGC"
 expirationToAnalyze = '2022-07-15:16'

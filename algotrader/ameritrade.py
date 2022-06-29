@@ -49,11 +49,14 @@ def getOptionChain(symbol, contract):
     # TODO: this should use mongo with a TTL index instead of a local file cache
     cacheFileName = f"cache/options-chain-{symbol}-{contract}-{startOfHour.isoformat()}.bin"
     if os.path.exists(cacheFileName):
+        print(f"Using cached options quotes from file {cacheFileName}")
         f = open(cacheFileName, 'rb')
         data = pickle.load(f)
         f.close()
         return data
     else:
+        print(f"Fetching fresh options quotes from Ameritrade")
+
         response = requests.get(
             url=f"https://api.tdameritrade.com/v1/marketdata/chains",
             params={

@@ -1,7 +1,7 @@
 from algotrader import analyzer
 
 def run():
-    analyzer.analyzeSymbolOptions()
+    analyzer.analyzeAllOptions()
 
 
 

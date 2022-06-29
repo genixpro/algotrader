@@ -1,5 +1,5 @@
 import datetime
-from pprint import pprint
+from pprint import pprint, pformat
 from matplotlib import pyplot as plt
 import numpy
 import numpy.random
@@ -34,63 +34,64 @@ def computeClearingPriceForOption(optionDetails):
     clearingPrice = optionDetails['bid'] + spread * constants.optionClearingPriceSpreadMidpoint
     return clearingPrice
 
-def compareOptionChainContracts(priceSimulation, putProfitsByStrike, callProfitsByStrike, putOptionChain, callOptionChain, expiration):
+def getOptionChainDetailsFieldForContractType(contract):
+    if contract == "PUT":
+        detailFieldName = "putExpDateMap"
+    elif contract == "CALL":
+        detailFieldName = "callExpDateMap"
+
+    return detailFieldName
+
+def compareOptionChainContracts(priceSimulation, profitsByStrike, optionChain, expiration, contract, symbol):
     comparisons = {}
-    for strikePrice in putOptionChain['putExpDateMap'][expiration].keys():
-        if strikePrice not in putProfitsByStrike:
+    detailFieldName = getOptionChainDetailsFieldForContractType(contract)
+
+    for strikePrice in optionChain[detailFieldName][expiration].keys():
+        if strikePrice not in profitsByStrike:
             # Skip this strike. Its soo far from the current center,
             # we didn't make a prediction for it
             continue
 
-        putOptionDetails = putOptionChain['putExpDateMap'][expiration][strikePrice][0]
-        callOptionDetails = callOptionChain['callExpDateMap'][expiration][strikePrice][0]
+        optionDetails = optionChain[detailFieldName][expiration][strikePrice][0]
 
-        expirationDateObj = datetime.datetime.utcfromtimestamp(putOptionDetails['expirationDate'] / 1000)
+        expirationDateObj = datetime.datetime.utcfromtimestamp(optionDetails['expirationDate'] / 1000)
         now = datetime.datetime.now()
         differenceDays = (expirationDateObj - now).days
 
-        putClearingPrice = computeClearingPriceForOption(putOptionDetails)
-        callClearingPrice = computeClearingPriceForOption(callOptionDetails)
+        clearingPrice = computeClearingPriceForOption(optionDetails)
 
-        investmentSimulation = simulation.MonteCarloInvestmentSimulation(priceSimulation=priceSimulation, 
+        investmentSimulation = simulation.MonteCarloInvestmentSimulation(priceSimulation=priceSimulation,
                                                                          consecutiveTradesPerSimulation=constants.investmentSimulationConsecutiveTrades,
-                                                                         numberOfSimulations=constants.investmentSimulationNumberOfSimulations,                                                                         
+                                                                         numberOfSimulations=constants.investmentSimulationNumberOfSimulations,
+                                                                         outlierProportionToDiscard=constants.investmentSimulationOutlierProportionToDiscard,
                                                                          )
-        proportionToInvest, lossRate = investmentSimulation.computeOptimalInvestmentAmount(strikePrice, putClearingPrice)
 
-        putProbabilityInTheMoney = priceSimulation.computeProbabilityOptionInMoney(float(strikePrice), 'PUT')
-        callProbabilityInTheMoney = priceSimulation.computeProbabilityOptionInMoney(float(strikePrice), 'CALL')
+        optimalInvestmentProportion, lossRate, nonAdjustedOptimalInvestmentProportion = investmentSimulation.computeOptimalInvestmentAmount(strikePrice, clearingPrice, contract, symbol)
 
-        proportionToInvest = min(proportionToInvest, putProbabilityInTheMoney)
+        probabilityInTheMoney = priceSimulation.computeProbabilityOptionInMoney(float(strikePrice), contract)
 
-        putExpectedProfit = putProfitsByStrike[strikePrice]
-        putGain = putExpectedProfit - putClearingPrice
-        putReturn = (putGain / putClearingPrice) * proportionToInvest
-        putROI = numpy.power(1 + putReturn, 365 / differenceDays) - 1
+        proportionToInvest = min(optimalInvestmentProportion, probabilityInTheMoney)
 
-        callExpectedProfit = callProfitsByStrike[strikePrice]
-        callGain = callExpectedProfit - callClearingPrice
-        callReturn = (callGain / callClearingPrice) * proportionToInvest
-        callROI = numpy.power(1 + callReturn, 365 / differenceDays) - 1
+        expectedProfit = profitsByStrike[strikePrice]
+        gain = expectedProfit - clearingPrice
+        optionReturn = (gain / clearingPrice) * proportionToInvest
+        optionAnnualizedReturn = numpy.power(1 + optionReturn, 365 / differenceDays) - 1
 
         comparisons[float(strikePrice)] = {
-            "putExpectedProfit": putExpectedProfit,
-            "putClearingPrice": putClearingPrice,
-            "callExpectedProfit": callExpectedProfit,
-            "callClearingPrice": callClearingPrice,
-            "putGain": float(f"{putGain:.2f}"),
-            "callGain": float(f"{callGain:.2f}"),
-            "putROI": float(f"{putROI:.2f}"),
-            "callROI": float(f"{callROI:.3f}"),
-            "putReturn": float(f"{putReturn:.2f}"),
-            "callReturn": float(f"{callReturn:.3f}"),
-            "putProbabilityInTheMoney": float(f"{putProbabilityInTheMoney:.3f}"),
-            "callProbabilityInTheMoney": float(f"{callProbabilityInTheMoney:.3f}"),
-            "putProportionToInvest": proportionToInvest,
-            "putLossRate": lossRate,
+            "expectedProfit": round(expectedProfit, 2),
+            "clearingPrice": round(clearingPrice, 2),
+            "gain": round(gain, 3),
+            "annualizedReturn": round(optionAnnualizedReturn, 3),
+            "return": round(abs(optionReturn), 3),
+            "probabilityInTheMoney": round(probabilityInTheMoney, 3),
+            "optimalInvestmentProportion": round(optimalInvestmentProportion, 3),
+            "proportionToInvest": round(proportionToInvest, 3),
+            "lossRate": round(lossRate, 3),
+            "nonAdjustedOptimalInvestmentProportion": round(nonAdjustedOptimalInvestmentProportion, 3)
         }
 
-        pprint(comparisons[float(strikePrice)])
+        print(f"{contract} with strike price {strikePrice}")
+        print(pformat({strikePrice: comparisons[float(strikePrice)]}))
 
     return comparisons
 
@@ -114,43 +115,56 @@ def runPriceSimulation(symbol, historicalsEndDate, predictionDays, datapoints=No
 
     return (priceSimulation, currentOpenPrice)
 
-def analyzeSymbolOptions():
-    putOptionChain = ameritrade.getOptionChain(constants.symbolToAnalyze, "PUT")
-    callOptionChain = ameritrade.getOptionChain(constants.symbolToAnalyze, "CALL")
+def analyzeSymbolOptions(symbol, contract, expiration, priceIncrement, tradingDaysRemaining):
+    print("Fetching current options quotes")
+    putOptionChain = ameritrade.getOptionChain(symbol, contract)
 
     print("Available option expiration dates")
-    pprint(list(putOptionChain['putExpDateMap'].keys()))
+    pprint(list(putOptionChain[getOptionChainDetailsFieldForContractType(contract)].keys()))
 
+    print("Running primary price simulation")
     historicalsEndDate = datetime.datetime.now() + datetime.timedelta(days=1)
     (priceSimulation, currentOpenPrice) = runPriceSimulation(
-        symbol=constants.symbolToAnalyze,
+        symbol=symbol,
         historicalsEndDate=historicalsEndDate,
-        predictionDays=constants.tradingDaysRemaining)
+        predictionDays=tradingDaysRemaining)
 
-    putProfitsByStrike = computeExpectedProfitsForFullOptionsChain(priceSimulation, currentOpenPrice, constants.optionPriceIncrement, "PUT")
-    callProfitsByStrike = computeExpectedProfitsForFullOptionsChain(priceSimulation, currentOpenPrice, constants.optionPriceIncrement, "CALL")
+    print("Computing expected profits for all the different available options")
+    profitsByStrike = computeExpectedProfitsForFullOptionsChain(priceSimulation, currentOpenPrice, priceIncrement, contract)
 
-    print("Here are the expected profits at different strikes for PUT options:")
-    pprint(putProfitsByStrike)
+    print(f"Here are the expected profits at different strikes for {contract} options:")
+    pprint(profitsByStrike)
 
-    comparisons = compareOptionChainContracts(priceSimulation, putProfitsByStrike, callProfitsByStrike, putOptionChain, callOptionChain, constants.expirationToAnalyze)
-    print("Here are the comparison details for different option contracts")
-    pprint(comparisons)
+    comparisons = compareOptionChainContracts(priceSimulation, profitsByStrike, putOptionChain, expiration, contract, symbol)
+    # print("Here are the comparison details for different option contracts")
+    # pprint(comparisons)
 
     print("Here are put returns by strike")
-    putGains = {
-        float(strikePrice): comparison['putReturn']
+    allReturns = {
+        float(strikePrice): comparison['return']
         for strikePrice, comparison in comparisons.items()
     }
-    pprint(putGains)
-    # plt.scatter(putGains.keys(), putGains.values())
-    # plt.show()
+    pprint(allReturns)
 
-    # bestAmountsToGamble = []
-    # probabilities = list(numpy.arange(0, 1, 0.03))
-    # for probability in probabilities:
-    #     amount = computeOptimalInvestmentAmount(probability)
-    #     bestAmountsToGamble.append(amount)
-    #
-    # plt.scatter(probabilities, bestAmountsToGamble)
-    # plt.show()
+    plt.scatter(allReturns.keys(), allReturns.values(), label="Returns by strike")
+    plt.show()
+
+def analyzeAllOptions():
+    # Analyze the PUTS
+    analyzeSymbolOptions(
+        symbol=constants.symbolToAnalyze,
+        contract="PUT",
+        expiration=constants.expirationToAnalyze,
+        priceIncrement=constants.optionPriceIncrement,
+        tradingDaysRemaining=constants.tradingDaysRemaining,
+    )
+
+    # Analyze the CALLS
+    analyzeSymbolOptions(
+        symbol=constants.symbolToAnalyze,
+        contract="CALL",
+        expiration=constants.expirationToAnalyze,
+        priceIncrement=constants.optionPriceIncrement,
+        tradingDaysRemaining=constants.tradingDaysRemaining,
+    )
+
