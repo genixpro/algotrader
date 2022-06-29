@@ -212,6 +212,6 @@ def analyzeAllOptions():
 
         allComparisons = list(sorted(allComparisons, key=lambda comparison: comparison['annualizedReturn'], reverse=True))
 
-        # Output the top five options by return
+        # Output the top ten options by return
         print("Outputting the best options across all categories")
         pprint(allComparisons[:10])
