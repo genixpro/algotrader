@@ -205,6 +205,8 @@ def analyzeAllOptions():
     allComparisons = []
 
     for symbol in constants.symbolsToTrade:
+        print(f"Analyzing symbol {symbol}")
+
         # Analyze the PUTS
         allComparisons.extend(analyzeSymbolOptions(
             symbol=symbol,
