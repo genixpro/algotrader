@@ -3,6 +3,7 @@ import datetime
 import json
 import pickle
 import os.path
+from algotrader import constants
 from pprint import pprint
 
 
