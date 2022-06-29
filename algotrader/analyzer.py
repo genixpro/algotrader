@@ -10,6 +10,7 @@ from algotrader import simulation
 from algotrader import constants
 import concurrent.futures
 import time
+import csv
 
 def showEndingPriceChart(endingPrices):
     plt.hist(endingPrices, bins=25)
@@ -257,3 +258,8 @@ def analyzeAllOptions():
         # Output the top ten options by return
         print("Outputting the best options across all symbols and categories")
         pprint(allComparisons[:10], indent=8)
+
+        with open("options.csv", "wt") as f:
+            dictWriter = csv.DictWriter(f, fieldnames=list(allComparisons[0].keys()))
+            dictWriter.writeheader()
+            dictWriter.writerows(allComparisons)
