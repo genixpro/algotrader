@@ -37,7 +37,9 @@ def getPriceData(symbol):
         raise Exception("Error fetching data from Ameritrade")
     else:
         for item in data['candles']:
-            item['datetime'] = datetime.datetime.utcfromtimestamp(item['datetime'] / 1000)
+            dateObject = datetime.datetime.utcfromtimestamp(item['datetime'] / 1000)
+            dateObject = dateObject.replace(hour=0, minute=0, second=0, microsecond=0)
+            item['datetime'] = dateObject
             item['symbol'] = symbol
 
             yield item

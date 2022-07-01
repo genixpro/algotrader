@@ -34,7 +34,7 @@ class SinglePriceSimulation:
     def __init__(self, simulationParameters):
         self.simulationParameters = simulationParameters
     
-    def runPriceSimulation(self, currentOpenPrice, numDays):
+    def runPriceSimulation(self, startingPrice, numDays, isSimulatingDuringMarketHours):
         dayChangeValues = self.simulationParameters.dayChangeValues
         gapPreviousValues = self.simulationParameters.gapPreviousValues
         gapNextValues = self.simulationParameters.gapNextValues
@@ -49,32 +49,41 @@ class SinglePriceSimulation:
         # sampledGapPreviousValues = numpy.random.choice(a=gapPreviousValues, size=(numDays - 1), replace=True)
 
         # sampledDayChangeValues = random.choices(dayChangeValues, k=numDays)
-        # sampledGapPreviousValues = random.choices(gapPreviousValues, k=(numDays - 1))
+        # if isSimulatingDuringMarketHours:
+            # sampledGapPreviousValues = random.choices(gapPreviousValues, k=(numDays - 1))
+        # else:
+            # sampledGapPreviousValues = random.choices(gapPreviousValues, k=numDays)
 
         sampledDayChangeValues = random.sample(dayChangeValues, k=numDays)
-        sampledGapPreviousValues = random.sample(gapPreviousValues, k=(numDays - 1))
+        # If we are simulating during market hours, the 'starting price' is assumed to be
+        # the current days open price. Thus we don't need to simulate another gap value
+        if isSimulatingDuringMarketHours:
+            sampledGapPreviousValues = random.sample(gapPreviousValues, k=(numDays - 1))
+        else:
+            sampledGapPreviousValues = random.sample(gapPreviousValues, k=numDays)
 
         cumulativeDayChanges = numpy.prod(sampledDayChangeValues)
         cumulativeGapPrevious = numpy.prod(sampledGapPreviousValues)
         lastDatapoint = historical_data.PriceDatapoint()
-        lastDatapoint.close = float(currentOpenPrice * cumulativeDayChanges * cumulativeGapPrevious)
+        lastDatapoint.close = float(startingPrice * cumulativeDayChanges * cumulativeGapPrevious)
         lastDatapoint.open = float(lastDatapoint.close / sampledDayChangeValues[-1])
 
         return lastDatapoint
 
 class MonteCarloPriceSimulation:
-    def __init__(self, datapoints, currentOpenPrice, numDays, numberOfSimulations):
+    def __init__(self, datapoints, startingPrice, numDays, numberOfSimulations, isSimulatingDuringMarketHours):
         self.simulationParameters = PriceSimulationParameters(datapoints)
-        self.currentOpenPrice = currentOpenPrice
+        self.startingPrice = startingPrice
         self.numDays = numDays
         self.numberOfSimulations = numberOfSimulations
         self.endingPrices = []
+        self.isSimulatingDuringMarketHours = isSimulatingDuringMarketHours
 
     def runSimulations(self):
         self.endingPrices = []
         for n in range(self.numberOfSimulations):
             simulation = SinglePriceSimulation(self.simulationParameters)
-            lastDatapoint = simulation.runPriceSimulation(self.currentOpenPrice, self.numDays)
+            lastDatapoint = simulation.runPriceSimulation(self.startingPrice, self.numDays, self.isSimulatingDuringMarketHours)
             self.endingPrices.append(lastDatapoint.close)
 
         self.endingPrices = numpy.array(self.endingPrices)

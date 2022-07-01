@@ -19,6 +19,11 @@ class PriceDatapoint:
         self.gapPrevious = None
         self.gapNext = None
 
+    def __repr__(self):
+        if self.datetime is not None:
+            return f"({self.datetime.strftime('%Y-%m-%d')} == {self.open:.2f} <-> {self.close:.2f})"
+        else:
+            return f"({self.open:.2f} <-> {self.close:.2f})"
 
 class HistoricalPrices:
     def __init__(self):

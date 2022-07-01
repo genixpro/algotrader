@@ -108,32 +108,40 @@ def compareOptionChainContracts(priceSimulation, profitsByStrike, optionChain, e
     return comparisons
 
 def runPriceSimulation(symbol, historicalsEndDate, predictionDays, datapoints=None):
+    startingPrice = None
+
     if datapoints is None:
         historicals = historical_data.HistoricalPrices()
         datapoints = historicals.getProcessedTimeSeries(symbol, historicalsEndDate, constants.priceSimulationTradingDaysOfHistoricalDataToUse + 1)
+        isSimulatingDuringMarketHours = True
+
+        # TODO: unsure if this should be set to the current days open price,
+        #  or the current price right as of this moment (which would be the "close" price here)
+        #  Currently setting it to the current price right as of this moment, so we make sure we
+        #  consider price movements that occurred already today. But this isn't a perfect or
+        #  principled way of considering the current intra-day price movement. Really the first
+        #  step of the price simulation should just be done with a smaller variance depending on
+        #  how many hours of trading are left in the current day.
+        startingPrice = datapoints[-1].close
+        datapoints = datapoints[:-1]
+    else:
+        isSimulatingDuringMarketHours = False
+        startingPrice = datapoints[-1].close
 
     if constants.verboseOutput:
         print(f"Latest datapoint for symbol {symbol}")
         pprint(datapoints[-1].__dict__)
-    # TODO: unsure if this should be set to the current days open price,
-    #  or the current price right as of this moment (which would be the "close" price here)
-    #  Currently setting it to the current price right as of this moment, so we make sure we
-    #  consider price movements that occurred already today. But this isn't a perfect or
-    #  principled way of considering the current intra-day price movement. Really the first
-    #  step of the price simulation should just be done with a smaller variance depending on
-    #  how many hours of trading are left in the current day.
-    currentOpenPrice = datapoints[-1].close
-    datapoints = datapoints[:-1]
 
     priceSimulation = simulation.MonteCarloPriceSimulation(
         datapoints=datapoints,
-        currentOpenPrice=currentOpenPrice,
+        startingPrice=startingPrice,
         numDays=predictionDays,
-        numberOfSimulations=constants.priceSimulationNumberOfSimulations
+        numberOfSimulations=constants.priceSimulationNumberOfSimulations,
+        isSimulatingDuringMarketHours=isSimulatingDuringMarketHours,
     )
     priceSimulation.runSimulations()
 
-    return (priceSimulation, currentOpenPrice)
+    return (priceSimulation, startingPrice)
 
 def getDatetimeObjectForOptionExpiration(expiration):
     return datetime.datetime.strptime(expiration.split(":")[0], "%Y-%m-%d")
@@ -216,8 +224,8 @@ def analyzeSymbolOptions(symbol, contract, priceIncrement):
     # plt.show()
 
 def analyzeAllOptions():
-    topExecutor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
-    # topExecutor = concurrent.futures.ProcessPoolExecutor(max_workers=30)
+    # topExecutor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
+    topExecutor = concurrent.futures.ProcessPoolExecutor(max_workers=30)
 
     allComparisonFutures = []
     for symbol in constants.symbolsToTrade:
