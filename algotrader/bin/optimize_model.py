@@ -1,15 +1,13 @@
-import pyximport
-pyximport.install(pyimport=True)
+# import pyximport
+# pyximport.install(pyimport=True)
 
-import analyzer
+from algotrader import optimizer
 import cProfile
 import pstats
 from pstats import SortKey
-import constants
-import historical_data
 
 def run():
-    analyzer.optimizeNumberOfHistoricalDays()
+    optimizer.optimizeNumberOfHistoricalDays()
 
     # cProfile.run('analyzer.optimizeNumberOfHistoricalDays()', 'restats')
     # p = pstats.Stats('restats')

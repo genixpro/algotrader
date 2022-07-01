@@ -62,12 +62,35 @@ def backtestPriceSimulation(predictionDays=22, daysOfHistoricalData=constants.pr
     return averageError
 
 def optimizeNumberOfHistoricalDays():
-    historicalDaysToTest = list(range(23, 150))
-    meanSquaredErrors = []
-    for historicalDays in historicalDaysToTest:
-        meanSquaredError = backtestPriceSimulation(daysOfHistoricalData=historicalDays)
-        print(f"Days: {historicalDays} - Final MSE {meanSquaredError:.5f}")
-        meanSquaredErrors.append(meanSquaredError)
+    allBests = []
 
-    plt.plot(historicalDaysToTest, meanSquaredErrors)
-    plt.show()
+    maxHistoricalDays = 65
+
+    for predictionDays in range(1, 60):
+        historicalDaysToTest = list(range(2, maxHistoricalDays))
+        bestHistoricalDays = None
+        bestMSE = None
+        meanSquaredErrors = []
+        for historicalDays in historicalDaysToTest:
+            meanSquaredError = backtestPriceSimulation(predictionDays=predictionDays, daysOfHistoricalData=historicalDays)
+            # print(f"Prediction days: {predictionDays} - Historical Days To Use: {historicalDays} - Final MSE {meanSquaredError:.5f}")
+            meanSquaredErrors.append(meanSquaredError)
+
+            if bestMSE is None or meanSquaredError < bestMSE:
+                bestMSE = meanSquaredError
+                bestHistoricalDays = historicalDays
+
+        print(f"Best historical days for {predictionDays} is {bestHistoricalDays} at an MSE of {bestMSE}")
+        allBests.append(bestHistoricalDays)
+
+        fig, ax = plt.subplots(figsize=(12, 6))
+        ax.set_xlim([1, maxHistoricalDays])
+
+        ax.set_ylim([0, min(0.25, numpy.maximum(meanSquaredErrors) * 1.1)])
+        ax.plot(historicalDaysToTest, meanSquaredErrors)
+        plt.savefig(f"optimal-historical-days-chart-{predictionDays}.png")
+        plt.close(fig)
+
+    print(allBests)
+    plt.plot(range(1, 60), allBests)
+    plt.savefig(f"all-optimal-historical-days-to-use.png")
