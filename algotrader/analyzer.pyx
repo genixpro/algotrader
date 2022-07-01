@@ -63,7 +63,7 @@ def compareOptionChainContracts(priceSimulation, profitsByStrike, optionChain, e
 
         expirationDateObj = datetime.datetime.utcfromtimestamp(optionDetails['expirationDate'] / 1000)
         now = datetime.datetime.now()
-        differenceDays = (expirationDateObj - now).days
+        differenceDays = max(1, (expirationDateObj - now).days)
 
         clearingPrice = computeClearingPriceForOption(optionDetails)
 
