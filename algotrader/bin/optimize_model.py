@@ -1,5 +1,5 @@
-# import pyximport
-# pyximport.install(pyimport=True)
+import pyximport
+pyximport.install()
 
 from algotrader import optimizer
 import cProfile

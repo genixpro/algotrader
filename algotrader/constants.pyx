@@ -4,6 +4,7 @@ priceSimulationTradingDaysOfHistoricalDataToUse = 33
 priceSimulationNumberOfSimulations = 100000
 
 investmentSimulationConsecutiveTrades = 25
+# investmentSimulationNumberOfSimulations = 1000
 investmentSimulationNumberOfSimulations = 10000
 investmentSimulationOutlierProportionToDiscard = 0.001
 

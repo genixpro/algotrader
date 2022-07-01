@@ -214,6 +214,7 @@ def analyzeSymbolOptions(symbol, contract, priceIncrement):
 
 def analyzeAllOptions():
     topExecutor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
+    # topExecutor = concurrent.futures.ProcessPoolExecutor(max_workers=30)
 
     allComparisonFutures = []
     for symbol in constants.symbolsToTrade:
@@ -237,7 +238,7 @@ def analyzeAllOptions():
 
     allComparisons = []
     for symbol, putFuture, callFuture in allComparisonFutures:
-        print(f"Fetching results for symbol {symbol}", flush=True)
+        print(f"Fetching results for symbol {symbol}")
 
         putResult = putFuture.result()
         callResult = callFuture.result()

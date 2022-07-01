@@ -1,5 +1,5 @@
 import pyximport
-pyximport.install(pyimport=True)
+pyximport.install()
 
 from algotrader import analyzer
 
