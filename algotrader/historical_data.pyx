@@ -1,3 +1,6 @@
+import pyximport
+pyximport.install()
+
 from algotrader import ameritrade
 import pymongo
 

@@ -1,3 +1,6 @@
+import pyximport
+pyximport.install()
+
 import concurrent.futures
 from algotrader import constants
 

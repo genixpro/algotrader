@@ -1,3 +1,6 @@
+import pyximport
+pyximport.install()
+
 import numpy
 import random
 import os.path

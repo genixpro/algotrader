@@ -1,3 +1,6 @@
+import pyximport
+pyximport.install()
+
 import datetime
 from pprint import pprint
 from matplotlib import pyplot as plt
