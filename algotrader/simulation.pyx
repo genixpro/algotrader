@@ -110,8 +110,11 @@ class MonteCarloInvestmentSimulation:
     def simulatePortfolio(self, strikePrice: cython.double, contractCost: cython.double, contract, proportionToInvest: cython.double) -> cython.double:
         startingCapital: cython.double = 10000
         capital: cython.double = startingCapital
-        for n in range(self.consecutiveTradesPerSimulation):
-            contractsToBuy: cython.double = (capital * proportionToInvest) / contractCost
+        contractRatio: cython.double = proportionToInvest / contractCost
+        n: cython.int = 0
+        consecutiveTradesPerSimulation: cython.int = self.consecutiveTradesPerSimulation
+        while n < consecutiveTradesPerSimulation:
+            contractsToBuy: cython.double = capital * contractRatio
             capital: cython.double = capital - contractCost * contractsToBuy
 
             endingPrice: cython.double = random.choice(self.priceSimulation.endingPrices)
@@ -123,6 +126,8 @@ class MonteCarloInvestmentSimulation:
             # print(capital, proportionToInvest, contractsToBuy, gain)
             if gain > 0:
                 capital: cython.double = capital + gain * contractsToBuy
+
+            n += 1
 
         return capital / startingCapital
 
@@ -164,7 +169,7 @@ class MonteCarloInvestmentSimulation:
             proportionsToTest.extend(numpy.arange(0.05, 1.01, 0.05))
 
         for proportionToInvest in proportionsToTest:
-            future = globalExecutor.submit(self.computeAverageReturn, strikePrice, contractCost, contract, proportionToInvest)
+            future = globalExecutor.submit(self.computeAverageReturn, float(strikePrice), contractCost, contract, proportionToInvest)
             futures.append((proportionToInvest, future))
 
         allAverageReturns = []
