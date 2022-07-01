@@ -86,7 +86,7 @@ def optimizeNumberOfHistoricalDays():
         fig, ax = plt.subplots(figsize=(12, 6))
         ax.set_xlim([1, maxHistoricalDays])
 
-        ax.set_ylim([0, min(0.25, numpy.maximum(meanSquaredErrors) * 1.1)])
+        ax.set_ylim([0, min(0.25, numpy.max(meanSquaredErrors) * 1.1)])
         ax.plot(historicalDaysToTest, meanSquaredErrors)
         plt.savefig(f"optimal-historical-days-chart-{predictionDays}.png")
         plt.close(fig)
