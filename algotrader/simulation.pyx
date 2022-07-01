@@ -113,15 +113,21 @@ class MonteCarloInvestmentSimulation:
         contractRatio: cython.double = proportionToInvest / contractCost
         n: cython.int = 0
         consecutiveTradesPerSimulation: cython.int = self.consecutiveTradesPerSimulation
+        isPut: cython.bool = False
+        if contract == "PUT":
+            isPut: cython.bool = True
+        elif contract == "CALL":
+            isPut: cython.bool = False
+
         while n < consecutiveTradesPerSimulation:
             contractsToBuy: cython.double = capital * contractRatio
             capital: cython.double = capital - contractCost * contractsToBuy
 
             endingPrice: cython.double = random.choice(self.priceSimulation.endingPrices)
             gain: cython.double = 0
-            if contract == "PUT":
+            if isPut:
                 gain: cython.double = strikePrice - endingPrice
-            elif contract == "CALL":
+            else:
                 gain: cython.double = endingPrice - strikePrice
             # print(capital, proportionToInvest, contractsToBuy, gain)
             if gain > 0:
