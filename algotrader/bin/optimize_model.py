@@ -1,3 +1,6 @@
+import pyximport
+pyximport.install(pyimport=True)
+
 import analyzer
 import cProfile
 import pstats

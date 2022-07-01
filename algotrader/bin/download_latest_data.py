@@ -1,3 +1,6 @@
+import pyximport
+pyximport.install(pyimport=True)
+
 from algotrader import constants
 from algotrader import historical_data
 
