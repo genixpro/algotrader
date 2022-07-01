@@ -3,6 +3,7 @@ pyximport.install()
 
 import numpy
 import random
+import cython
 import os.path
 from algotrader import historical_data
 import matplotlib.pyplot as plt
@@ -106,21 +107,22 @@ class MonteCarloInvestmentSimulation:
         self.outlierProportionToDiscard = outlierProportionToDiscard
 
 
-    def simulatePortfolio(self, strikePrice, contractCost, contract, proportionToInvest):
-        startingCapital = 10000
-        capital = startingCapital
+    def simulatePortfolio(self, strikePrice: cython.double, contractCost: cython.double, contract, proportionToInvest: cython.double) -> cython.double:
+        startingCapital: cython.double = 10000
+        capital: cython.double = startingCapital
         for n in range(self.consecutiveTradesPerSimulation):
-            contractsToBuy = round((capital * proportionToInvest) / contractCost)
-            capital = capital - contractCost * contractsToBuy
+            contractsToBuy: cython.double = (capital * proportionToInvest) / contractCost
+            capital: cython.double = capital - contractCost * contractsToBuy
 
-            endingPrice = random.choice(self.priceSimulation.endingPrices)
+            endingPrice: cython.double = random.choice(self.priceSimulation.endingPrices)
+            gain: cython.double = 0
             if contract == "PUT":
-                gain = strikePrice - endingPrice
+                gain: cython.double = strikePrice - endingPrice
             elif contract == "CALL":
-                gain = endingPrice - strikePrice
+                gain: cython.double = endingPrice - strikePrice
             # print(capital, proportionToInvest, contractsToBuy, gain)
             if gain > 0:
-                capital = capital + gain * contractsToBuy
+                capital: cython.double = capital + gain * contractsToBuy
 
         return capital / startingCapital
 
