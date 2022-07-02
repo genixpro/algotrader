@@ -4,3 +4,4 @@ numpy
 pymongo
 holidays
 cython
+scipy
