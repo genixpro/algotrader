@@ -11,6 +11,7 @@ from algotrader import ameritrade
 from algotrader import historical_data
 from algotrader import simulation
 from algotrader import constants
+from algotrader import correlation_analysis
 import concurrent.futures
 import time
 import csv
@@ -67,6 +68,11 @@ def compareOptionChainContracts(priceSimulation, profitsByStrike, optionChain, e
 
         clearingPrice = computeClearingPriceForOption(optionDetails)
 
+        if clearingPrice <= 0:
+            print("bad option")
+            pprint(optionDetails)
+            continue
+
         investmentSimulation = simulation.MonteCarloInvestmentSimulation(priceSimulation=priceSimulation,
                                                                          consecutiveTradesPerSimulation=constants.investmentSimulationConsecutiveTrades,
                                                                          numberOfSimulations=constants.investmentSimulationNumberOfSimulations,
@@ -82,7 +88,7 @@ def compareOptionChainContracts(priceSimulation, profitsByStrike, optionChain, e
         expectedProfit = profitsByStrike[strikePrice]
         gain = expectedProfit - clearingPrice
         optionReturn = (gain / clearingPrice) * proportionToInvest
-        optionAnnualizedReturn = numpy.power(1 + optionReturn, 365 / differenceDays) - 1
+        optionDailyReturn = numpy.power(1 + optionReturn, 1 / differenceDays) - 1
 
         comparisons[float(strikePrice)] = {
             "symbol": symbol,
@@ -92,7 +98,7 @@ def compareOptionChainContracts(priceSimulation, profitsByStrike, optionChain, e
             "expectedProfit": round(expectedProfit, 2),
             "clearingPrice": round(clearingPrice, 2),
             "gain": round(gain, 3),
-            "annualizedReturn": round(optionAnnualizedReturn, 3),
+            "dailyReturn": round(optionDailyReturn, 5),
             "return": round(abs(optionReturn), 3),
             "probabilityInTheMoney": round(probabilityInTheMoney, 3),
             "optimalInvestmentProportion": round(optimalInvestmentProportion, 3),
@@ -223,9 +229,9 @@ def analyzeSymbolOptions(symbol, contract, priceIncrement):
     # plt.scatter(allReturns.keys(), allReturns.values(), label="Returns by strike")
     # plt.show()
 
-def analyzeAllOptions():
+def computeAllOptionsComparisons():
     # topExecutor = concurrent.futures.ThreadPoolExecutor(max_workers=3)
-    topExecutor = concurrent.futures.ProcessPoolExecutor(max_workers=30)
+    topExecutor = concurrent.futures.ProcessPoolExecutor(max_workers=constants.numWorkers)
 
     allComparisonFutures = []
     for symbol in constants.symbolsToTrade:
@@ -257,21 +263,71 @@ def analyzeAllOptions():
         symbolComparisons = []
         symbolComparisons.extend(putResult)
         symbolComparisons.extend(callResult)
-        symbolComparisons = list(sorted(symbolComparisons, key=lambda comparison: comparison['annualizedReturn'], reverse=True))
+        symbolComparisons = list(sorted(symbolComparisons, key=lambda comparison: comparison['dailyReturn'], reverse=True))
 
         # Output the top ten options by return
         print(f"Best options for this symbol ({symbol})")
         pprint(symbolComparisons[:10], indent=8)
 
         allComparisons.extend(symbolComparisons)
+    return allComparisons
 
-        allComparisons = list(sorted(allComparisons, key=lambda comparison: comparison['annualizedReturn'], reverse=True))
+def analyzeAllOptions():
+    allComparisons = computeAllOptionsComparisons()
 
-        # Output the top ten options by return
-        print("Outputting the best options across all symbols and categories")
-        pprint(allComparisons[:10], indent=8)
+    allComparisons = list(sorted(allComparisons, key=lambda comparison: comparison['dailyReturn'], reverse=True))
 
-        with open("options.csv", "wt") as f:
-            dictWriter = csv.DictWriter(f, fieldnames=list(allComparisons[0].keys()))
-            dictWriter.writeheader()
-            dictWriter.writerows(allComparisons)
+    # Output the top ten options by return
+    print("Outputting the best options across all symbols and categories")
+    pprint(allComparisons[:10], indent=8)
+
+    with open("options.csv", "wt") as f:
+        dictWriter = csv.DictWriter(f, fieldnames=list(allComparisons[0].keys()))
+        dictWriter.writeheader()
+        dictWriter.writerows(allComparisons)
+
+    # Now we filter the options for ones with a high probability of being in the money
+    filteredOptions = filter(lambda c: c['probabilityInTheMoney'] > 0.5, allComparisons)
+
+    # Filter for options that wont cost too much to purchase
+    filteredOptions = filter(lambda c: c['clearingPrice'] < 2, filteredOptions)
+
+    # Filter for options with a positive expected return
+    filteredOptions = filter(lambda c: c['gain'] > 0, filteredOptions)
+    filteredOptions = list(filteredOptions)
+
+    # print("filteredOptions", filteredOptions)
+
+    with open("filtered-options.csv", "wt") as f:
+        dictWriter = csv.DictWriter(f, fieldnames=list(list(filteredOptions)[0].keys()))
+        dictWriter.writeheader()
+        dictWriter.writerows(filteredOptions)
+
+    # Compute the cross correlation table
+    allPairs, correlationGrid, correlationTable = correlation_analysis.computeCrossCorrelationTable()
+
+    print("Main decorrelated option chain")
+
+    # Now we compute the chain
+    chosenOptions = []
+    for n in range(5):
+        # print("filteredOptions")
+        # pprint(filteredOptions)
+        # print(len(filteredOptions))
+        remainingSymbols = list(set(c['symbol'] for c in filteredOptions))
+        # print("remainingSymbols", remainingSymbols)
+        currentChain = list(set(c['symbol'] for c in chosenOptions))
+        chosenOption = None
+        chainCorrelation = 0
+        if len(chosenOptions) == 0:
+            chosenOption = filteredOptions[0]
+        else:
+            nextSymbol, chainCorrelation = correlation_analysis.findNextNonCorrelationSymbol(currentChain, correlationTable, remainingSymbols)
+            for c in filteredOptions:
+                if c['symbol'] == nextSymbol:
+                    chosenOption = c
+                    break
+
+        chosenOptions.append(chosenOption)
+        filteredOptions = list(filter(lambda c: c['symbol'] != chosenOption['symbol'], filteredOptions))
+        print(f"{chosenOption['contract']} {chosenOption['symbol']} {chosenOption['expiration']} {chosenOption['strike']}. GAIN: {chosenOption['gain']} RETURN: {chosenOption['dailyReturn']} PROPORTION: {chosenOption['optimalInvestmentProportion']}. CHAIN CORRELATION: {chainCorrelation}. PROB: {chosenOption['probabilityInTheMoney']}. CLEAR: {chosenOption['clearingPrice']}")

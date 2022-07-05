@@ -4,8 +4,8 @@ priceSimulationTradingDaysOfHistoricalDataToUse = 33
 priceSimulationNumberOfSimulations = 100000
 
 investmentSimulationConsecutiveTrades = 25
-# investmentSimulationNumberOfSimulations = 1000
-investmentSimulationNumberOfSimulations = 10000
+investmentSimulationNumberOfSimulations = 1000
+# investmentSimulationNumberOfSimulations = 10000
 investmentSimulationOutlierProportionToDiscard = 0.001
 
 optionPriceIncrement = 0.5
@@ -50,7 +50,7 @@ symbolsToTrade = [
     "ADI",
     "MU",
     "ABNB",
-    "ATVI",
+    # "ATVI", # Removing activision blizzard because they are going through an acquisition, which makes things unpredictable
     "VMW",
     "PANW",
     "TEAM",
