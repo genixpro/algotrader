@@ -1,6 +1,6 @@
 numWorkers = 30
 
-priceSimulationTradingDaysOfHistoricalDataToUse = 33
+priceSimulationTradingDaysOfHistoricalDataToUse = 120
 priceSimulationNumberOfSimulations = 100000
 
 investmentSimulationConsecutiveTrades = 25
