@@ -148,7 +148,7 @@ def computeAntiCorrelations(startSymbol, count):
         nextSymbolToAdd, correlation = findNextNonCorrelationSymbol(chain, correlationTable, remainingSymbols)
         remainingSymbols.remove(nextSymbolToAdd)
         chain.append(nextSymbolToAdd)
-        print(f"Next: {averageCorrelations[0]}")
+        print(f"Next: {nextSymbolToAdd} at correlation {correlation:.3f}")
     outputPriceChart(chain, "chain.png")
 
 
