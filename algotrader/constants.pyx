@@ -1,7 +1,7 @@
 # cython: language_level=3, boundscheck=True
 import multiprocessing
 
-numWorkers = multiprocessing.cpu_count()
+numWorkers = multiprocessing.cpu_count() + 1
 
 priceSimulationTradingDaysOfHistoricalDataToUse = 120
 priceSimulationNumberOfSimulations = 100000
