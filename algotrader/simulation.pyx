@@ -1,3 +1,4 @@
+# cython: language_level=3, boundscheck=True
 import pyximport
 pyximport.install()
 
@@ -9,6 +10,7 @@ from algotrader import historical_data
 import matplotlib.pyplot as plt
 from algotrader.global_services import globalExecutor
 from algotrader import constants
+from libc.stdlib cimport rand
 
 class PriceSimulationParameters:
     def __init__(self, datapoints):
@@ -115,7 +117,9 @@ class MonteCarloInvestmentSimulation:
         self.numberOfSimulations = numberOfSimulations
         self.outlierProportionToDiscard = outlierProportionToDiscard
 
-
+    # turn off bounds checking and wrap around for this function, to make it execute more quickly
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     def simulatePortfolio(self, strikePrice: cython.double, contractCost: cython.double, contract, proportionToInvest: cython.double) -> cython.double:
         startingCapital: cython.double = 10000
         capital: cython.double = startingCapital
@@ -128,11 +132,14 @@ class MonteCarloInvestmentSimulation:
         elif contract == "CALL":
             isPut: cython.bool = False
 
+        endingPrices_view: cython.double[:] = self.priceSimulation.endingPrices
+        endingPrices_length: cython.int = len(self.priceSimulation.endingPrices)
+
         while n < consecutiveTradesPerSimulation:
             contractsToBuy: cython.double = capital * contractRatio
             capital: cython.double = capital - contractCost * contractsToBuy
 
-            endingPrice: cython.double = random.choice(self.priceSimulation.endingPrices)
+            endingPrice: cython.double = endingPrices_view[rand() % endingPrices_length]
             gain: cython.double = 0
             if isPut:
                 gain: cython.double = strikePrice - endingPrice

@@ -1,6 +1,7 @@
 import os
 
 from setuptools import setup, find_packages
+from Cython.Build import cythonize
 
 here = os.path.abspath(os.path.dirname(__file__))
 with open('requirements.txt', 'rt') as f:
@@ -41,5 +42,6 @@ setup(
             'algotrader_optimize_model = algotrader.bin.optimize_model:run',
         ]
     },
+    ext_modules=cythonize("algotrader/simulation.pyx"),
 )
 
