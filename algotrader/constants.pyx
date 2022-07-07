@@ -17,7 +17,7 @@ optionChainEndPriceRatio = 2.0
 optionClearingPriceSpreadMidpoint = 0.7
 optionMaxExpirationTimeDays = 25
 
-correlationAnalysisMovingAveragePeriodDays = 5
+correlationAnalysisMovingAveragePeriodDays = 8
 
 verboseOutput = False
 generateCharts = False
@@ -204,3 +204,4 @@ symbolsToTrade = techStocks + funds + commodity + realEstate + bonds + \
                  international + financial + energy + manufacturing + retail + \
                  consumer + food
 
+symbolsToTrade = funds

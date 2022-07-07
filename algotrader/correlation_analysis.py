@@ -23,7 +23,7 @@ def getNormalizedPriceTimeSeries(symbol, startDate, daysOfHistory, historicals):
     
     return changes
 
-def getPriceDirectionalTimeSeries(symbol, startDate, daysOfHistory, historicals):
+def getShortTermPriceMovementTimeSeries(symbol, startDate, daysOfHistory, historicals):
     movingAverageEpsilon = 1.0 / constants.correlationAnalysisMovingAveragePeriodDays
 
     symbolDatapoints = historicals.getProcessedTimeSeries(symbol, startDate, daysOfHistory)
@@ -37,15 +37,6 @@ def getPriceDirectionalTimeSeries(symbol, startDate, daysOfHistory, historicals)
         currentValue = currentValue * (1.0 - movingAverageEpsilon) + changes[n] * movingAverageEpsilon
         changes[n] = currentValue
 
-    # Now convert it into purely positive or negative
-    for n in range(len(changes)):
-        if changes[n] > 1:
-            changes[n] = 1
-        elif changes[n] < 1:
-            changes[n] = -1
-        else:
-            changes[n] = 0
-
     return changes
 
 def outputPriceChart(symbols, fileName):
@@ -53,7 +44,7 @@ def outputPriceChart(symbols, fileName):
     today = datetime.datetime.now()
 
     priceLists = [
-        (symbol, getPriceDirectionalTimeSeries(symbol, today, 250, historicals))
+        (symbol, getShortTermPriceMovementTimeSeries(symbol, today, 250, historicals))
         for symbol in symbols
     ]
 
@@ -90,7 +81,7 @@ def computeCrossCorrelationTable():
         if firstSymbol in timeSeriesCacheBySymbols:
             firstPrices = timeSeriesCacheBySymbols[firstSymbol]
         else:
-            firstPrices = getPriceDirectionalTimeSeries(firstSymbol, today, 250, historicals)
+            firstPrices = getShortTermPriceMovementTimeSeries(firstSymbol, today, 250, historicals)
             timeSeriesCacheBySymbols[firstSymbol] = firstPrices
 
         symbolCorrelations = []
@@ -105,7 +96,7 @@ def computeCrossCorrelationTable():
             if secondSymbol in timeSeriesCacheBySymbols:
                 secondPrices = timeSeriesCacheBySymbols[secondSymbol]
             else:
-                secondPrices = getPriceDirectionalTimeSeries(secondSymbol, today, 250, historicals)
+                secondPrices = getShortTermPriceMovementTimeSeries(secondSymbol, today, 250, historicals)
                 timeSeriesCacheBySymbols[secondSymbol] = secondPrices
 
             if len(firstPrices) > len(secondPrices):
