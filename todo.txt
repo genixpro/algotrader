@@ -1,23 +1,57 @@
+- NEED UNIT TESTS
 - purge ameritrade API key from history of git repository (or just invalidate it and remove from git)
 - Change caching for options requests to use mongodb, possibly with TTL index (or maybe we just keep the data forever?)
-- Automatically compute the number of trading days between now and option expiration. Take into account holidays.
-- Smoothly handle when price simulation is run after hours - changes how the very first timestep is handled. No open price - need to compute gap over previous close price
-- [IN PROGRESS] Need a mechanism to back-test the monte carlo simulation and optimize its hyperparameters (such as amount of history to consider)
+- [PARTIAL DONE - NEED TO CONSIDER WHICH HOLIDAYS ARE RELEVANT FOR TRADIND] Automatically compute the number of trading
+    days between now and option expiration. Take into account holidays.
+- Smoothly handle when price simulation is run after hours - changes how the very first timestep is handled. No open
+    price - need to compute gap over previous close price
+- Need to consider the number of trading hours remaining in the day. This way it doesn't optimize assuming a full day
+    change when theres only part of a day left remaining. Currently this will over-estimate the possible spread
+    when executed mid-day in the trading day, since the first day is simulated with a full day left of possible
+    price swings, but yet there is only a partial day remaining
+- [DONE] Need a mechanism to back-test the monte carlo simulation and optimize its hyperparameters (such as amount of
+    history to consider)
 - See if we can improve price simulation by taking into account regression to mean
 - Something still off with investment simulation to determine optimal amount to invest v.s. amount keep in cash
-- Split investment simulation into two classes - one which performs a single simulation, and the other which performs the montecarlo calculation across all simulations
+- Split investment simulation into two classes - one which performs a single simulation, and the other which performs
+    the montecarlo calculation across all simulations
 - Can we take into account volatility trends?
-- Can I inject my own subjective bias into the price simulation? E.g. If i have a rough idea on which direction a price will move
-- Analyze different option expirations and compare against each other to determine optimal portfolio
-- Analyze different options on different securities against each other, to determine optimal portfolio
-- Portfolio needs to be diversified to different industries, to prevent too much risk on a single industry. Can we calculate market correlations or cross correlations?
-- Need to correctly handle CALL options, particularly around the montecarlo investment simulation
+- Can I inject my own subjective bias into the price simulation? E.g. If i have a rough idea on which direction a price
+    will move
+- [DONE] Analyze different option expirations and compare against each other to determine optimal portfolio
+- [DONE] Analyze different options on different securities against each other, to determine optimal portfolio
+- [DONE] Portfolio needs to be diversified to different industries, to prevent too much risk on a single industry. Can
+    we calculate market correlations or cross correlations?
+- [DONE] Need to correctly handle CALL options, particularly around the montecarlo investment simulation
 - Can the script automatically spit out commands, like orders I should execute?
-- Can we predict if we should sell an option early, at its current price, rather then wait it out to excersize it?
+- Can we predict if we should sell an option early, at its current price, rather than wait it out to excersize it?
 - Calculations need to take into account trading fees
-- Need a better metric then MSE for back-testing and optimizing the monte-carlo price simulation
-- NEED UNIT TESTS
+- [DONE] Need a better metric then MSE for back-testing and optimizing the monte-carlo price simulation
 - Switch from using the constants.verboseOutput option to a proper logging system
-
-- do I make this public?
-
+- Need to track historic trades and how they turned out
+- Need to optimize performance of the MonteCarloInvestmentSimulation. Perhaps we should have a trained ML
+    model based on a bunch of investment simulations, instead of computing it fresh each time? Just need this
+     to go faster so the whole script can spit out the option purchase suggestions more automatically
+- Need to move to a better source of data (no more ameritrade). Instead of hardcoded list of symbols, we should choose
+    which symbols to trade based on data provided from a financial data provider, using a principled filter & select formula
+- Need to check if historic data we are using is normalized against stock splits
+- Test whether montecarlo should be doing the gap and day changes separately, or if they should be merged together
+- Need a optimization statistic that I can compare between different executions, rather than just on the same execution
+- Simulate the entirety of the portfolio of options, rather than just a single option
+- [MAYBE] Don't trade symbols that have moved heavily during the day
+- Need to consider that options dont trade in decimals, and must usually be some sort of round number (like in 5 cent increments)
+- [MAYBE] Don't trade stocks that have already had big price movements in recent history (e.g. if they already fell a
+    lot in last 6 months)
+- [MAYBE] Compute option trades at market rather then limit orders in the center of a movement
+- Test whether we should replace the price simulations based on just using exact historical price changes,
+    to using a precomputed random distribution. The distribution shouldn't be the normal - should consider
+    skew and kurtosis. Should closely match the price change distribution
+- Test whether there should be a bias towards using more recent price changes in the monte-carlo price simulation.
+    E.g. make the more recent price changes more likely to be selected then ones in the more distant past.
+- [MAYBE] Implement code to automatically execute trades once they've been decided
+- [MAYBE] include an automatic warning to not to trade the open or mid-day. Only trade the close.
+- [MAYBE] compare optimization hyperparameters based on symbol, asset class, sector, etc...
+- [MAYBE] separate the realtime price quotes from the historic data. This way we don't rely on this hack of using the
+    "close" price on the current day, which is actually just the current best price when the day hasn't actually closed
+    yet. Should be more a more principled approach.
+- [MAYBE] automatically liquidate the options when they are near their expiration
