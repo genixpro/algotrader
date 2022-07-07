@@ -23,12 +23,37 @@ def getNormalizedPriceTimeSeries(symbol, startDate, daysOfHistory, historicals):
     
     return changes
 
+def getPriceDirectionalTimeSeries(symbol, startDate, daysOfHistory, historicals):
+    movingAverageEpsilon = 1.0 / constants.correlationAnalysisMovingAveragePeriodDays
+
+    symbolDatapoints = historicals.getProcessedTimeSeries(symbol, startDate, daysOfHistory)
+    changes = [
+        d.gapPrevious * d.dayChange for d in symbolDatapoints if
+        d.gapPrevious is not None and d.dayChange is not None
+    ]
+
+    currentValue = changes[0]
+    for n in range(len(changes)):
+        currentValue = currentValue * (1.0 - movingAverageEpsilon) + changes[n] * movingAverageEpsilon
+        changes[n] = currentValue
+
+    # Now convert it into purely positive or negative
+    for n in range(len(changes)):
+        if changes[n] > 1:
+            changes[n] = 1
+        elif changes[n] < 1:
+            changes[n] = -1
+        else:
+            changes[n] = 0
+
+    return changes
+
 def outputPriceChart(symbols, fileName):
     historicals = historical_data.HistoricalPrices()
     today = datetime.datetime.now()
 
     priceLists = [
-        (symbol, getNormalizedPriceTimeSeries(symbol, today, 250, historicals))
+        (symbol, getPriceDirectionalTimeSeries(symbol, today, 250, historicals))
         for symbol in symbols
     ]
 
@@ -47,6 +72,8 @@ def outputPriceChart(symbols, fileName):
     for symbol, priceList in priceListsForComparison:
         ax.plot(range(len(priceList)), priceList, label=symbol)
     ax.legend()
+    # ax.set_ylim([0.99, 1.01])
+    ax.axhline(0, color='black')
 
     plt.savefig(fileName)
     # plt.show()
@@ -59,7 +86,7 @@ def computeCrossCorrelationTable():
     correlationGrid = []
     correlationTable = {}
     for firstSymbol in constants.symbolsToTrade:
-        firstPrices = getNormalizedPriceTimeSeries(firstSymbol, today, 250, historicals)
+        firstPrices = getPriceDirectionalTimeSeries(firstSymbol, today, 250, historicals)
 
         symbolCorrelations = []
         symbolTable = {}
@@ -69,7 +96,7 @@ def computeCrossCorrelationTable():
             if firstSymbol == secondSymbol:
                 symbolCorrelations.append(1)
                 continue
-            secondPrices = getNormalizedPriceTimeSeries(secondSymbol, today, 250, historicals)
+            secondPrices = getPriceDirectionalTimeSeries(secondSymbol, today, 250, historicals)
 
             if len(firstPrices) > len(secondPrices):
                 firstPricesForComparison = firstPrices[-len(secondPrices):]

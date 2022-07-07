@@ -1,3 +1,4 @@
+# cython: language_level=3, boundscheck=True
 import multiprocessing
 
 numWorkers = multiprocessing.cpu_count()
@@ -15,6 +16,8 @@ optionChainStartPriceRatio = 0.5
 optionChainEndPriceRatio = 2.0
 optionClearingPriceSpreadMidpoint = 0.7
 optionMaxExpirationTimeDays = 25
+
+correlationAnalysisMovingAveragePeriodDays = 5
 
 verboseOutput = False
 generateCharts = False
