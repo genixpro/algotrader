@@ -154,8 +154,7 @@ def performCrossCorrelationAnalysis():
 
     outputCorrelationGrid(correlationGrid)
 
-
-def findNextNonCorrelationSymbol(chain, correlationTable, remainingSymbols):
+def findNextNonCorrelatedSymbols(chain, correlationTable, remainingSymbols):
     averageCorrelations = []
     for symbol in remainingSymbols:
         symbolCorrelations = [
@@ -167,7 +166,11 @@ def findNextNonCorrelationSymbol(chain, correlationTable, remainingSymbols):
 
     # print(averageCorrelations)
     averageCorrelations = sorted(averageCorrelations)
-    return averageCorrelations[0][1], averageCorrelations[0][0]
+    return [(val[1], val[0]) for val in averageCorrelations]
+
+def findNextNonCorrelationSymbol(chain, correlationTable, remainingSymbols):
+    averageCorrelations = findNextNonCorrelatedSymbols(chain, correlationTable, remainingSymbols)
+    return averageCorrelations[0]
 
 
 def computeAntiCorrelations(startSymbol, count):

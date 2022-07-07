@@ -323,10 +323,14 @@ def analyzeAllOptions():
         if len(chosenOptions) == 0:
             chosenOption = filteredOptions[0]
         else:
-            nextSymbol, chainCorrelation = correlation_analysis.findNextNonCorrelationSymbol(currentChain, correlationTable, remainingSymbols)
+            nextSymbolCorrelations = correlation_analysis.findNextNonCorrelatedSymbols(currentChain, correlationTable, remainingSymbols)
+            # Choose the best option from among the top 5 least correlated symbols remaining in the list
+            nextSymbols = [val[0] for val in nextSymbolCorrelations[:5]]
             for c in filteredOptions:
-                if c['symbol'] == nextSymbol:
+                if c['symbol'] in nextSymbols:
                     chosenOption = c
+                    symbolIndex = nextSymbols.index(c['symbol'])
+                    chainCorrelation = nextSymbolCorrelations[symbolIndex][1]
                     break
 
         chosenOptions.append(chosenOption)
