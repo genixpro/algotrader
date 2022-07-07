@@ -204,5 +204,3 @@ food = [
 symbolsToTrade = techStocks + funds + commodity + realEstate + bonds + \
                  international + financial + energy + manufacturing + retail + \
                  consumer + food
-
-symbolsToTrade = funds
