@@ -88,10 +88,10 @@ funds = [
     "XLE", # Energy
     "XLC", # Communications
     "XLY", # Consumer Discretionary
-    "XLP" # Consumer Staples
+    "XLP", # Consumer Staples
     "XLF", # Financial
     "XLV", # Healthcare
-    "XLI" # Industrial
+    "XLI", # Industrial
     "IFRA", # Infrastructure
     "XLK", # Tech
     "XLU", # Utitilies
