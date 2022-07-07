@@ -85,8 +85,13 @@ def computeCrossCorrelationTable():
     allPairs = []
     correlationGrid = []
     correlationTable = {}
+    timeSeriesCacheBySymbols = {}
     for firstSymbol in constants.symbolsToTrade:
-        firstPrices = getPriceDirectionalTimeSeries(firstSymbol, today, 250, historicals)
+        if firstSymbol in timeSeriesCacheBySymbols:
+            firstPrices = timeSeriesCacheBySymbols[firstSymbol]
+        else:
+            firstPrices = getPriceDirectionalTimeSeries(firstSymbol, today, 250, historicals)
+            timeSeriesCacheBySymbols[firstSymbol] = firstPrices
 
         symbolCorrelations = []
         symbolTable = {}
@@ -96,7 +101,12 @@ def computeCrossCorrelationTable():
             if firstSymbol == secondSymbol:
                 symbolCorrelations.append(1)
                 continue
-            secondPrices = getPriceDirectionalTimeSeries(secondSymbol, today, 250, historicals)
+
+            if secondSymbol in timeSeriesCacheBySymbols:
+                secondPrices = timeSeriesCacheBySymbols[secondSymbol]
+            else:
+                secondPrices = getPriceDirectionalTimeSeries(secondSymbol, today, 250, historicals)
+                timeSeriesCacheBySymbols[secondSymbol] = secondPrices
 
             if len(firstPrices) > len(secondPrices):
                 firstPricesForComparison = firstPrices[-len(secondPrices):]
@@ -186,4 +196,4 @@ if __name__ == "__main__":
     # performCrossCorrelationAnalysis()
     # randomStartSymbol = random.choice(constants.symbolsToTrade)
     # computeAntiCorrelations(randomStartSymbol, 3)
-    computeAntiCorrelations("SAP", 3)
+    computeAntiCorrelations("SAP", 10)

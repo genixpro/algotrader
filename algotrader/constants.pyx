@@ -88,11 +88,11 @@ funds = [
     "XLE", # Energy
     "XLC", # Communications
     "XLY", # Consumer Discretionary
-    "XLP", # Consumer Staples
-    "XLF", # Financial
+    # "XLP", # Consumer Staples
+    # "XLF", # Financial
     "XLV", # Healthcare
-    "XLI", # Industrial
-    "IFRA", # Infrastructure
+    # "XLI", # Industrial
+    # "IFRA", # Infrastructure
     "XLK", # Tech
     "XLU", # Utitilies
 ]
@@ -152,7 +152,7 @@ financial = [
 energy = [
     "XOM", # Exxon Mobil
     "CVX", # Chevron
-    "RDS.A", # Royal dutch
+    # "RDS.A", # Royal dutch
     "TTE", # Total energies
     "COP", # Conoco phillips
     "BP", # British petroleum
@@ -190,7 +190,7 @@ consumer = [
 
 food = [
     "HSY", # Hershey
-     "KO", # Coca cola
+    "KO", # Coca cola
     "PEP", # Pepsico
     "BUD", # Anhauser busch
     "DEO", # Diageo
