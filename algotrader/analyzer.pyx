@@ -188,9 +188,14 @@ def analyzeSymbolOptions(symbol, contract, priceIncrement):
     allComparisons = []
 
     for expiration in expirationDates:
-        if (getDatetimeObjectForOptionExpiration(expiration) - datetime.datetime.now()).days > constants.optionMaxExpirationTimeDays:
+        daysDiff = (getDatetimeObjectForOptionExpiration(expiration) - datetime.datetime.now()).days
+        if daysDiff > constants.optionMaxExpirationTimeDays:
             if constants.verboseOutput:
                 print(f"Skipping analysis for {symbol} {contract} {expiration} because its too far in the future")
+            continue
+        if daysDiff < constants.optionMinExpirationTimeDays:
+            if constants.verboseOutput:
+                print(f"Skipping analysis for {symbol} {contract} {expiration} because its too soon")
             continue
 
         tradingDaysRemaining = computeTradingDaysRemainingForExpiration(expiration)

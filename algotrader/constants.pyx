@@ -15,6 +15,7 @@ optionPriceIncrement = 0.5
 optionChainStartPriceRatio = 0.5
 optionChainEndPriceRatio = 2.0
 optionClearingPriceSpreadMidpoint = 0.7
+optionMinExpirationTimeDays = 4
 optionMaxExpirationTimeDays = 25
 
 correlationAnalysisMovingAveragePeriodDays = 8
