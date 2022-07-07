@@ -1,4 +1,6 @@
-numWorkers = 30
+import multiprocessing
+
+numWorkers = multiprocessing.cpu_count()
 
 priceSimulationTradingDaysOfHistoricalDataToUse = 120
 priceSimulationNumberOfSimulations = 100000
@@ -18,6 +20,7 @@ verboseOutput = False
 generateCharts = False
 
 symbolsToTrade = [
+    # Tech stocks
     "MGC",
     "HOOD",
     "COIN",
