@@ -64,7 +64,7 @@ def outputPriceChart(symbols, fileName):
         ax.plot(range(len(priceList)), priceList, label=symbol)
     ax.legend()
     # ax.set_ylim([0.99, 1.01])
-    ax.axhline(0, color='black')
+    ax.axhline(1, color='black')
 
     plt.savefig(fileName)
     # plt.show()
@@ -190,4 +190,4 @@ if __name__ == "__main__":
     # performCrossCorrelationAnalysis()
     # randomStartSymbol = random.choice(constants.symbolsToTrade)
     # computeAntiCorrelations(randomStartSymbol, 3)
-    computeAntiCorrelations("SAP", 10)
+    computeAntiCorrelations("SAP", 3)
