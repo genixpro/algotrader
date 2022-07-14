@@ -338,6 +338,15 @@ def analyzeAllOptions():
                     chainCorrelation = nextSymbolCorrelations[symbolIndex][1]
                     break
 
+        if chosenOption is None:
+            print("There are no more options that can be included into the chain.")
+            break
+
         chosenOptions.append(chosenOption)
         filteredOptions = list(filter(lambda c: c['symbol'] != chosenOption['symbol'], filteredOptions))
         print(f"{chosenOption['contract']} {chosenOption['symbol']} {chosenOption['expiration']} {chosenOption['strike']}. GAIN: {chosenOption['gain']} RETURN: {chosenOption['dailyReturn']} PROPORTION: {chosenOption['optimalInvestmentProportion']}. CHAIN CORRELATION: {chainCorrelation}. PROB: {chosenOption['probabilityInTheMoney']}. CLEAR: {chosenOption['clearingPrice']}")
+
+    with open("chosen-options.csv", "wt") as f:
+        dictWriter = csv.DictWriter(f, fieldnames=list(chosenOptions[0].keys()))
+        dictWriter.writeheader()
+        dictWriter.writerows(chosenOptions)
